@@ -13,6 +13,9 @@ WORKDIR /go/src/DB_Project_TP
 
 # Собираем и устанавливаем пакет
 RUN go get "github.com/lib/pq" && go get "github.com/gorilla/mux"
+RUN go get "github.com/gorilla/schema" && go get "go.uber.org/zap"
+RUN go get "go.uber.org/zap/zapcore"
+
 RUN go build
 
 FROM ubuntu:18.04 AS release
