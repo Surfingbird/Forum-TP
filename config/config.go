@@ -17,7 +17,8 @@ var (
 
 	CONNBDStr         = " user=" + DBUSER + " dbname=" + DBNAME + " password=" + DBPASSWORD + " sslmode=disable"
 	DB        *sql.DB = connectDB(CONNBDStr)
-	PORT      string  = "8080"
+	// PORT      string  = "8080"
+	PORT string = "5000"
 )
 
 func connectDB(CONNBDStr string) *sql.DB {
