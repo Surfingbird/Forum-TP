@@ -5,11 +5,11 @@ RUN ls
 RUN pwd
 RUN echo $GOPATH
 # ADD . /opt/build/golang/
-ADD . /go/src/Forum-TP
+ADD . /go/src/DB_Project_TP
 #ADD common/ /opt/build/common/
 
 # WORKDIR /opt/build/golang
-WORKDIR /go/src/Forum-TP
+WORKDIR /go/src/DB_Project_TP
 
 # Собираем и устанавливаем пакет
 RUN go get "github.com/lib/pq" && go get "github.com/gorilla/mux"
@@ -49,7 +49,7 @@ VOLUME  ["/etc/postgresql", "/var/log/postgresql", "/var/lib/postgresql"]
 
 # Собранный ранее сервер
 # COPY --from=build /opt/build/golang/* /home/
-COPY --from=build /go/src/Forum-TP/* /home/
+COPY --from=build /go/src/DB_Project_TP/* /home/
 
 # Back to the root user
 USER root
