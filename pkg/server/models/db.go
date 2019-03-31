@@ -55,16 +55,16 @@ func TruncatePostsTable() {
 	}
 }
 
-var sqlTruncateUsers = `truncate table project_bd.users`
+var sqlTruncateUsers = `truncate table users`
 
-var sqlTruncateThreads = `truncate table project_bd.threads`
+var sqlTruncateThreads = `truncate table threads`
 
-var sqlTruncateForums = `truncate table project_bd.forums`
+var sqlTruncateForums = `truncate table forums`
 
-var sqlTruncatePosts = `truncate table project_bd.posts`
+var sqlTruncatePosts = `truncate table posts`
 
 var sqlDBInfo = `select
-  (select count(*) from project_bd.posts) as posts,
-  (select count(*) from project_bd.threads) as threads,
-  (select count(*) from project_bd.forums) as forums,
-  (select count(*) from project_bd.users) as users`
+  (select count(*) from posts) as posts,
+  (select count(*) from threads) as threads,
+  (select count(*) from forums) as forums,
+  (select count(*) from users) as users`

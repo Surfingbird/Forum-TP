@@ -83,10 +83,10 @@ func UpdateUserVote(vote api.Vote, id int) (prevDiff int) {
 	return prevDiff
 }
 
-var sqlVoteForThread = `update project_bd.threads set votes = votes + $1 where id = $2`
+var sqlVoteForThread = `update threads set votes = votes + $1 where id = $2`
 
-var sqlSaveUserVote = `insert into project_bd.votes (v_user, thread, u_vote) values ($1, $2, $3)`
+var sqlSaveUserVote = `insert into votes (v_user, thread, u_vote) values ($1, $2, $3)`
 
-var sqlCheckUserVote = `select u_vote from project_bd.votes  where v_user = $1 and thread = $2`
+var sqlCheckUserVote = `select u_vote from votes  where v_user = $1 and thread = $2`
 
-var sqlUpdateUserVote = `update project_bd.votes set u_vote = $1 where thread = $2`
+var sqlUpdateUserVote = `update votes set u_vote = $1 where thread = $2`

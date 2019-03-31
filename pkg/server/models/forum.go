@@ -61,14 +61,14 @@ func CheckForum(slug string) (ok bool, forumSlug string) {
 	return true, forumSlug
 }
 
-var sqlInsertForum = `insert into project_bd.forums (slug, threads, title, user_f)
+var sqlInsertForum = `insert into forums (slug, threads, title, user_f)
 values ($1, $2, $3, $4)`
 
 var sqlSelectForum = `select slug,
-  (select count(*) from project_bd.threads where forum = $1) as threads,
+  (select count(*) from threads where forum = $1) as threads,
   title,
-  (select count(*) from project_bd.posts where forum = $1) as post,
+  (select count(*) from posts where forum = $1) as post,
   user_f
-from project_bd.forums where slug = $1`
+from forums where slug = $1`
 
-var sqlCheckForum = `select slug from project_bd.forums where slug = $1`
+var sqlCheckForum = `select slug from forums where slug = $1`

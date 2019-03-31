@@ -187,23 +187,23 @@ func SortedPosts(params *api.PostsSorted, thread int) []api.Post {
 }
 
 var sqlPosts = `select author, created, forum, id, message, parent, thread, isedited
-from project_bd.posts `
+from posts `
 
-var sqlInsertPost = `INSERT INTO project_bd.posts (author, created, forum, message, parent, thread, path)
+var sqlInsertPost = `INSERT INTO posts (author, created, forum, message, parent, thread, path)
  				VALUES ($1, $2, $3, $4, $5, $6,
-                (SELECT path FROM project_bd.posts WHERE id = $5)
+                (SELECT path FROM posts WHERE id = $5)
                 ||
-                (SELECT currval('project_bd.posts_id_seq')))`
+                (SELECT currval('posts_id_seq')))`
 
-var sqlCheckParentPost = `select id from project_bd.posts where id = $1 and thread = $2`
+var sqlCheckParentPost = `select id from posts where id = $1 and thread = $2`
 
 var sqlSelectAnotherPostParams = `select author, created, forum, id, message, parent, thread
-from project_bd.posts where author = $1 and message = $2 `
+from posts where author = $1 and message = $2 `
 
-var sqlCheckPost = `select id from project_bd.posts where id = $1`
+var sqlCheckPost = `select id from posts where id = $1`
 
-var sqlPostUpdate = `update project_bd.posts set message = (case when $1 = '' then message else $1 end), isedited = true
+var sqlPostUpdate = `update posts set message = (case when $1 = '' then message else $1 end), isedited = true
 where id = $2`
 
 var sqlSelectPost = `select author, created, forum, id, message, parent, thread, isedited
-from project_bd.posts where id = $1`
+from posts where id = $1`

@@ -1,14 +1,16 @@
+-- create schema project_bd;
+
 create extension citext;
 
-create table project_bd.users (
+create table users (
   id bigserial not null primary key,
   fullname varchar(100) not null,
   nickname citext unique not null,
   email citext unique not null,
   about text null
-)
+);
 
-create table project_bd.forums (
+create table forums (
   posts bigint not null default 0,
   slug citext unique not null,
   threads int not null default 0,
@@ -16,7 +18,7 @@ create table project_bd.forums (
   user_f citext not null
 );
 
-create table project_bd.threads (
+create table threads (
   author citext not null,
   created timestamp with time zone default now(),
   forum citext not null,
@@ -27,7 +29,7 @@ create table project_bd.threads (
   votes bigint default 0
 );
 
-create table project_bd.posts (
+create table posts (
   author citext not null,
   created timestamp with time zone default now(),
   forum citext null,
@@ -39,7 +41,7 @@ create table project_bd.posts (
   thread bigint
 );
 
-create table project_bd.votes (
+create table votes (
   v_user citext not null,
   thread bigint not null,
   u_vote int not null

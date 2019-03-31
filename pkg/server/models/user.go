@@ -181,7 +181,7 @@ func SelectForumsUsers(params api.ForumsUsersQuery, slug string) (users []api.Us
 	return users, http.StatusOK
 }
 
-var sqlInsertUser = `INSERT INTO project_bd.users 
+var sqlInsertUser = `INSERT INTO users 
 							(fullname, nickname, email, about)
 							VALUES ($1, $2, $3, $4)`
 
@@ -190,7 +190,7 @@ var sqlSelectUser = `select
 					email,
 					fullname,
 					nickname
-				from project_bd.users
+				from users
 				where nickname = $1`
 
 var sqlSelectUserConflict = `select
@@ -198,11 +198,11 @@ var sqlSelectUserConflict = `select
 							email,
   							fullname,
   							nickname
-						from project_bd.users
+						from users
 						where nickname = $1 
 						or email = $2`
 
-var sqlUpdateUser = `update project_bd.users
+var sqlUpdateUser = `update users
 set about = (case
             when $1 = '' then about
              else $1 end),
@@ -214,24 +214,24 @@ set about = (case
             else $3 end)
 where nickname = $4`
 
-var sqlCheckUser = `select * from project_bd.users where nickname = $1`
+var sqlCheckUser = `select * from users where nickname = $1`
 
-var sqlRegNickname = `select nickname  from project_bd.users where nickname = $1`
+var sqlRegNickname = `select nickname  from users where nickname = $1`
 
 var sqlForumsUsers = `
 select u.about, u.email, u.fullname, u.nickname
-from project_bd.users u
+from users u
 
 where (
   exists(
       select *
-      from project_bd.posts p
+      from posts p
       where p.author = u.nickname and p.forum = $1
   )
   or
   exists(
       select *
-      from project_bd.threads t
+      from threads t
       where t.author = u.nickname and t.forum = $1
   )
 ) 

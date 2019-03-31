@@ -143,7 +143,7 @@ func SelectQueryFromParams(params SelectThreadParams) string {
 		Since = params.Since
 	}
 
-	query := `select author, created, forum, id, message, slug, title from project_bd.threads where forum = $1 `
+	query := `select author, created, forum, id, message, slug, title from threads where forum = $1 `
 
 	if Since != "" {
 		query = query + "and created" + compare + "'" + Since + "'" + " "
@@ -301,7 +301,7 @@ func ThreadIDFromUrl(slugOrID string) (id int, status int) {
 }
 
 //toDO костыль pq: CASE types text and timestamp with time zone cannot be matched
-var sqlInsertThreadWithTime = `insert into project_bd.threads (author, created, forum, message, slug, title)
+var sqlInsertThreadWithTime = `insert into threads (author, created, forum, message, slug, title)
     values ($1,
       $2,
       $3,
@@ -310,7 +310,7 @@ var sqlInsertThreadWithTime = `insert into project_bd.threads (author, created, 
       $6)`
 
 //toDO костыль pq: CASE types text and timestamp with time zone cannot be matched
-var sqlInsertThread = `insert into project_bd.threads (author, forum, message, slug, title)
+var sqlInsertThread = `insert into threads (author, forum, message, slug, title)
     values ($1,
 	  $2,
       $3,
@@ -318,25 +318,25 @@ var sqlInsertThread = `insert into project_bd.threads (author, forum, message, s
       $5)`
 
 var sqlSelectThread = `select author, created, forum, id, message, slug, title
- from project_bd.threads where title = $1 or slug = $2`
+ from threads where title = $1 or slug = $2`
 
 var sqlCheckThreadBySlug = `select author, created, forum, id, message, slug, title
- from project_bd.threads where slug = $1`
+ from threads where slug = $1`
 
 var sqlSelectThreadByTitle = `select author, created, forum, id, message, slug, title
- from project_bd.threads where title = $1`
+ from threads where title = $1`
 
 var sqlSelectThreadById = `select author, created, forum, id, message, slug, title, votes
- from project_bd.threads where id = $1`
+ from threads where id = $1`
 
-var sqlSelectThreadIdbySlug = `select id from project_bd.threads where slug = $1`
+var sqlSelectThreadIdbySlug = `select id from threads where slug = $1`
 
-var sqlCheckThreadIdbyId = `select id from project_bd.threads where id = $1`
+var sqlCheckThreadIdbyId = `select id from threads where id = $1`
 
-var sqlGetForumByThread = `select f.slug from project_bd.forums f where f.slug = 
-(select t.forum from project_bd.threads t where t.id = $1)`
+var sqlGetForumByThread = `select f.slug from forums f where f.slug = 
+(select t.forum from threads t where t.id = $1)`
 
-var sqlUpdateThread = `update project_bd.threads  set message = (case
+var sqlUpdateThread = `update threads  set message = (case
             when $1 = '' then message
              else $1 end),
     title = (case

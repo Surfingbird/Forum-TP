@@ -87,7 +87,7 @@ func treeSortedPosts(params *api.PostsSorted, thread int) []api.Post {
 	var rows *sql.Rows
 	var err error
 	if params.Since != "" {
-		where += fmt.Sprintf(" and path %v (SELECT path FROM project_bd.posts p WHERE p.id = $2) ", compare)
+		where += fmt.Sprintf(" and path %v (SELECT path FROM posts p WHERE p.id = $2) ", compare)
 		query := sqlPosts + where + orderBY + limitStr
 
 		rows, err = config.DB.Query(query, thread, params.Since)
@@ -142,10 +142,10 @@ func parentTreeSortedPosts(params *api.PostsSorted, thread int) []api.Post {
 
 	where := fmt.Sprintf(" where thread = $1 and path[1] in ")
 
-	selectIn := fmt.Sprintf(" select par.id from project_bd.posts par ")
+	selectIn := fmt.Sprintf(" select par.id from posts par ")
 	whereIn := fmt.Sprintf(" where par.thread = $1 and par.parent is null ")
 	if params.Since != "" {
-		whereIn += fmt.Sprintf(" and par.path[1] %v (select path[1] from project_bd.posts where id = $2) ", compare)
+		whereIn += fmt.Sprintf(" and par.path[1] %v (select path[1] from posts where id = $2) ", compare)
 	}
 
 	orderIn := fmt.Sprintf(" order by par.created %v, par.id %v ", sort, sort)
