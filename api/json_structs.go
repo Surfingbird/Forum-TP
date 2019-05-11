@@ -104,7 +104,7 @@ type Thread struct {
 	Message string `json:"message"`
 	Slug    string `json:"slug"`
 	Title   string `json:"title"`
-	Votes   uint64 `json:"votes"`
+	Votes   int64  `json:"votes"`
 }
 
 type ThreadUpdate struct {

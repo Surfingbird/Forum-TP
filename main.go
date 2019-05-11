@@ -16,7 +16,7 @@ func main() {
 	log.Println("Server started!")
 	err := config.DB.Ping()
 	if err != nil {
-		log.Fatal("Can not connect to DB!")
+		log.Fatalf("Can not connect to DB: %v", err.Error())
 	}
 
 	r := mux.NewRouter()

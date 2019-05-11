@@ -10,18 +10,15 @@ import (
 )
 
 //toDo доделать логику обновления голосований
-func VoteBranch(vote api.Vote, slugOrID string) (status int) {
+func VoteBranch(vote api.Vote, id int) (status int) {
 	if ok := CheckUser(vote.Nickname); !ok {
 		return http.StatusNotFound
 	}
 
-	id, status := getThreadID(slugOrID)
-	if status == http.StatusNotFound {
-		return http.StatusNotFound
-	}
-
 	diffVote := vote.Voice
-	//toDo должно вместе просиходить
+
+	tx, _ := config.DB.Begin()
+
 	if ok := CheckUserVoteInThread(vote.Nickname, id); !ok {
 		SaveUserVote(vote, id)
 	} else {
@@ -35,13 +32,16 @@ func VoteBranch(vote api.Vote, slugOrID string) (status int) {
 
 	res, err := config.DB.Exec(sqlVoteForThread, diffVote, id)
 	if err != nil {
-		log.Fatalln("VoteBranch", err.Error())
+		config.Logger.Fatal("VoteBranch", err.Error())
 	}
 
 	rows, _ := res.RowsAffected()
 	if rows != 1 {
-		log.Fatalf("VoteBranch update: expected: %v have %v", 1, rows)
+		tx.Rollback()
+		config.Logger.Fatalf("VoteBranch update: expected: %v have %v", 1, rows)
 	}
+
+	tx.Commit()
 
 	return http.StatusOK
 }
