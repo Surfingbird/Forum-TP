@@ -50,7 +50,7 @@ func CreateThread(t *api.Thread) (status int, lastid int64) {
 			t.Slug,
 			t.Title).Scan(&lastid)
 		if err != nil {
-			fmt.Println("CreateThread: %v", err.Error())
+			config.Logger.Info(fmt.Sprintf("CreateThread: %v", err.Error()))
 			status = http.StatusConflict
 
 			return
@@ -64,7 +64,7 @@ func CreateThread(t *api.Thread) (status int, lastid int64) {
 			t.Slug,
 			t.Title).Scan(&lastid)
 		if err != nil {
-			fmt.Println("CreateThread", err.Error())
+			config.Logger.Info(fmt.Sprintf("CreateThread", err.Error()))
 			status = http.StatusConflict
 
 			return
@@ -83,8 +83,9 @@ func SelectThreadsByForum(forum string, params SelectThreadParams) (threads []ap
 	query := SelectQueryFromParams(params)
 	rows, err := config.DB.Query(query, forum)
 	if err != nil {
-		log.Fatalf("SelectThreadsByForum (%v): %v\n", query, err.Error())
-		log.Fatalln("SelectThreadsByForum", err.Error())
+		config.Logger.Fatal(fmt.Sprintf("SelectThreadsByForum (%v): %v\n", query, err.Error()))
+
+		return
 	}
 	defer rows.Close()
 
@@ -99,7 +100,7 @@ func SelectThreadsByForum(forum string, params SelectThreadParams) (threads []ap
 			&thread.Message,
 			&thread.Slug,
 			&thread.Title); err != nil {
-			log.Fatalf("SelectThreadsByForum (%v): %v\n", query, err.Error())
+			config.Logger.Fatal(fmt.Sprintf("SelectThreadsByForum (%v): %v\n", query, err.Error()))
 		}
 
 		threads = append(threads, thread)
@@ -111,7 +112,9 @@ func SelectThreadsByForum(forum string, params SelectThreadParams) (threads []ap
 func SelectThread(title, slug string) (thread api.Thread, status int) {
 	row, err := config.DB.Query(sqlSelectThread, title, slug)
 	if err != nil {
-		log.Fatalln("SelectThread", err.Error())
+		config.Logger.Fatal(fmt.Sprintf("SelectThread", err.Error()))
+
+		return
 	}
 	defer row.Close()
 
@@ -127,7 +130,9 @@ func SelectThread(title, slug string) (thread api.Thread, status int) {
 		&thread.Slug,
 		&thread.Title)
 	if err != nil {
-		log.Fatalf("SelectThread: %v\n", err.Error())
+		config.Logger.Fatalf("SelectThread: %v\n", err.Error())
+
+		return
 	}
 
 	return thread, http.StatusOK
@@ -167,7 +172,7 @@ func SelectQueryFromParams(params SelectThreadParams) string {
 func CheckThreadBySlug(slug string) bool {
 	res, err := config.DB.Exec(sqlCheckThreadBySlug, slug)
 	if err != nil {
-		log.Fatalln("CheckThreadBySlug", err.Error())
+		config.Logger.Fatal("CheckThreadBySlug", err.Error())
 	}
 
 	count, _ := res.RowsAffected()
@@ -185,7 +190,7 @@ func CheckThreadBySlug(slug string) bool {
 func SelectThreadByTitle(title string) (thread api.Thread, status int) {
 	row, err := config.DB.Query(sqlSelectThreadByTitle, title)
 	if err != nil {
-		log.Fatalln("SelectThread", err.Error())
+		config.Logger.Fatal("SelectThread", err.Error())
 	}
 	defer row.Close()
 
@@ -201,7 +206,7 @@ func SelectThreadByTitle(title string) (thread api.Thread, status int) {
 		&thread.Slug,
 		&thread.Title)
 	if err != nil {
-		log.Fatalf("SelectThread: %v\n", err.Error())
+		config.Logger.Fatalf("SelectThread: %v\n", err.Error())
 	}
 
 	return thread, http.StatusOK
@@ -210,7 +215,7 @@ func SelectThreadByTitle(title string) (thread api.Thread, status int) {
 func ThreadById(id int64) (thread api.Thread, err error) {
 	row, err := config.DB.Query(sqlSelectThreadById, id)
 	if err != nil {
-		log.Fatalln("SelectThread", err.Error())
+		config.Logger.Fatal("SelectThread", err.Error())
 	}
 	defer row.Close()
 
@@ -219,15 +224,17 @@ func ThreadById(id int64) (thread api.Thread, err error) {
 		return
 	}
 
+	// author, created, forum, id, message, slug, title, votes
 	err = row.Scan(&thread.Author,
 		&thread.Created,
 		&thread.Forum,
 		&thread.Id,
 		&thread.Message,
 		&thread.Slug,
-		&thread.Title)
+		&thread.Title,
+		&thread.Votes)
 	if err != nil {
-		log.Fatalf("SelectThread: %v\n", err.Error())
+		config.Logger.Fatalf("SelectThread: %v\n", err.Error())
 	}
 
 	return
@@ -236,7 +243,7 @@ func ThreadById(id int64) (thread api.Thread, err error) {
 func SelectThreadByTitleAndForum(title string, forum string) (thread api.Thread, status int) {
 	row, err := config.DB.Query(sqlSelectThreadByTitleAndForum, title, forum)
 	if err != nil {
-		log.Fatalln("SelectThread", err.Error())
+		config.Logger.Fatal("SelectThread", err.Error())
 	}
 	defer row.Close()
 
@@ -252,7 +259,7 @@ func SelectThreadByTitleAndForum(title string, forum string) (thread api.Thread,
 		&thread.Slug,
 		&thread.Title)
 	if err != nil {
-		log.Fatalf("SelectThread: %v\n", err.Error())
+		config.Logger.Fatalf("SelectThread: %v\n", err.Error())
 	}
 
 	return thread, http.StatusOK
@@ -335,12 +342,12 @@ func UpdateThread(updateThread api.ThreadUpdate, slugOrID string) (status int) {
 	res, err := config.DB.Exec(sqlUpdateThread, updateThread.Message,
 		updateThread.Title, id)
 	if err != nil {
-		log.Fatalln("UpdateThread: ", err.Error())
+		config.Logger.Fatal("UpdateThread: ", err.Error())
 	}
 
 	rows, _ := res.RowsAffected()
 	if rows != 1 {
-		log.Fatalf("UpdateThread, Invalid update: expected %v, have %v\n", 1, rows)
+		config.Logger.Fatalf("UpdateThread, Invalid update: expected %v, have %v\n", 1, rows)
 	}
 
 	return http.StatusOK
@@ -370,22 +377,14 @@ var sqlInsertThreadWithTime2 = `insert into threads (author, created, forum, mes
 	  returning id`
 
 //toDO костыль pq: CASE types text and timestamp with time zone cannot be matched
-var sqlInsertThread2 = `insert into threads (author, forum, message, slug, title)
-    values ($1,
-	  $2,
-      $3,
-      $4,
-	  $5)
-	  returning id`
-
-//toDO костыль pq: CASE types text and timestamp with time zone cannot be matched
 var sqlInsertThreadWithTime = `insert into threads (author, created, forum, message, slug, title)
     values ($1,
       $2,
       $3,
       $4,
       $5,
-      $6)`
+	  $6)
+	  returning id`
 
 //toDO костыль pq: CASE types text and timestamp with time zone cannot be matched
 var sqlInsertThread = `insert into threads (author, forum, message, slug, title)
@@ -393,7 +392,8 @@ var sqlInsertThread = `insert into threads (author, forum, message, slug, title)
 	  $2,
       $3,
       $4,
-      $5)`
+	  $5)
+	  returning id`
 
 var sqlSelectThread = `select author, created, forum, id, message, slug, title
  from threads where title = $1 or slug = $2`
