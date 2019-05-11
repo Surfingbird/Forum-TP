@@ -19,51 +19,60 @@ type SelectThreadParams struct {
 	Query string `schema:"-"`
 }
 
-func CreateThread(t *api.Thread) (status int) {
-
+func CreateThread(t *api.Thread) (status int, lastid int64) {
 	if ok := CheckUser(t.Author); !ok {
-		return http.StatusNotFound
+		status = http.StatusNotFound
+
+		return
 	}
 
 	ok, forumSlug := CheckForum(t.Forum)
 	if !ok {
-		return http.StatusNotFound
+		status = http.StatusNotFound
+
+		return
 	}
 	t.Forum = forumSlug
 
 	if t.Slug != "" {
 		if ok := CheckThreadBySlug(t.Slug); ok {
-			return http.StatusConflict
+			status = http.StatusConflict
+
+			return
 		}
 	}
 
 	if t.Created == "" {
-		_, err := config.DB.Exec(sqlInsertThread,
+		err := config.DB.QueryRow(sqlInsertThread,
 			t.Author,
 			t.Forum,
 			t.Message,
 			t.Slug,
-			t.Title)
+			t.Title).Scan(&lastid)
 		if err != nil {
-			fmt.Println("CreateThread", err.Error())
-			return http.StatusConflict
-		}
+			fmt.Println("CreateThread: %v", err.Error())
+			status = http.StatusConflict
 
+			return
+		}
 	} else {
-		_, err := config.DB.Exec(sqlInsertThreadWithTime,
+		err := config.DB.QueryRow(sqlInsertThreadWithTime,
 			t.Author,
 			t.Created,
 			t.Forum,
 			t.Message,
 			t.Slug,
-			t.Title)
+			t.Title).Scan(&lastid)
 		if err != nil {
 			fmt.Println("CreateThread", err.Error())
-			return http.StatusConflict
+			status = http.StatusConflict
+
+			return
 		}
 	}
+	status = http.StatusCreated
 
-	return http.StatusCreated
+	return
 }
 
 func SelectThreadsByForum(forum string, params SelectThreadParams) (threads []api.Thread, status int) {
@@ -198,6 +207,57 @@ func SelectThreadByTitle(title string) (thread api.Thread, status int) {
 	return thread, http.StatusOK
 }
 
+func ThreadById(id int64) (thread api.Thread, err error) {
+	row, err := config.DB.Query(sqlSelectThreadById, id)
+	if err != nil {
+		log.Fatalln("SelectThread", err.Error())
+	}
+	defer row.Close()
+
+	if !row.Next() {
+		err = fmt.Errorf("ThreadById: There is no this thread!")
+		return
+	}
+
+	err = row.Scan(&thread.Author,
+		&thread.Created,
+		&thread.Forum,
+		&thread.Id,
+		&thread.Message,
+		&thread.Slug,
+		&thread.Title)
+	if err != nil {
+		log.Fatalf("SelectThread: %v\n", err.Error())
+	}
+
+	return
+}
+
+func SelectThreadByTitleAndForum(title string, forum string) (thread api.Thread, status int) {
+	row, err := config.DB.Query(sqlSelectThreadByTitleAndForum, title, forum)
+	if err != nil {
+		log.Fatalln("SelectThread", err.Error())
+	}
+	defer row.Close()
+
+	if !row.Next() {
+		return thread, http.StatusNotFound
+	}
+
+	err = row.Scan(&thread.Author,
+		&thread.Created,
+		&thread.Forum,
+		&thread.Id,
+		&thread.Message,
+		&thread.Slug,
+		&thread.Title)
+	if err != nil {
+		log.Fatalf("SelectThread: %v\n", err.Error())
+	}
+
+	return thread, http.StatusOK
+}
+
 func ThreadIdbySlug(slug string) (id, status int) {
 	row := config.DB.QueryRow(sqlSelectThreadIdbySlug, slug)
 	err := row.Scan(&id)
@@ -300,6 +360,24 @@ func ThreadIDFromUrl(slugOrID string) (id int, status int) {
 	return id, http.StatusOK
 }
 
+var sqlInsertThreadWithTime2 = `insert into threads (author, created, forum, message, slug, title)
+    values ($1,
+      $2,
+      $3,
+      $4,
+      $5,
+	  $6)
+	  returning id`
+
+//toDO костыль pq: CASE types text and timestamp with time zone cannot be matched
+var sqlInsertThread2 = `insert into threads (author, forum, message, slug, title)
+    values ($1,
+	  $2,
+      $3,
+      $4,
+	  $5)
+	  returning id`
+
 //toDO костыль pq: CASE types text and timestamp with time zone cannot be matched
 var sqlInsertThreadWithTime = `insert into threads (author, created, forum, message, slug, title)
     values ($1,
@@ -325,6 +403,9 @@ var sqlCheckThreadBySlug = `select author, created, forum, id, message, slug, ti
 
 var sqlSelectThreadByTitle = `select author, created, forum, id, message, slug, title
  from threads where title = $1`
+
+var sqlSelectThreadByTitleAndForum = `select author, created, forum, id, message, slug, title
+ from threads where title = $1 and forum = $2`
 
 var sqlSelectThreadById = `select author, created, forum, id, message, slug, title, votes
  from threads where id = $1`

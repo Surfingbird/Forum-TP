@@ -3,7 +3,6 @@ package models
 import (
 	"DB_Project_TP/api"
 	"DB_Project_TP/config"
-	"log"
 )
 
 func GetDBInfo() api.DBInfo {
@@ -14,7 +13,7 @@ func GetDBInfo() api.DBInfo {
 		&info.Forums,
 		&info.Users)
 	if err != nil {
-		log.Fatalln("GetDBInfo", err.Error())
+		config.Logger.Fatal("GetDBInfo", err.Error())
 	}
 
 	return info
@@ -30,38 +29,38 @@ func TruncateAllTables() {
 func TruncateUserTable() {
 	_, err := config.DB.Exec(sqlTruncateUsers)
 	if err != nil {
-		log.Fatalln("Can not do pre exectute", err.Error())
+		config.Logger.Fatal("TruncateUserTable: Can not do pre exectute", err.Error())
 	}
 }
 
 func TruncateThreadsTable() {
 	_, err := config.DB.Exec(sqlTruncateThreads)
 	if err != nil {
-		log.Fatalln("Can not do pre exectute", err.Error())
+		config.Logger.Fatal("TruncateThreadsTable: Can not do pre exectute", err.Error())
 	}
 }
 
 func TruncateForumsTable() {
 	_, err := config.DB.Exec(sqlTruncateForums)
 	if err != nil {
-		log.Fatalln("Can not do pre exectute", err.Error())
+		config.Logger.Fatal("TruncateForumsTable: Can not do pre exectute", err.Error())
 	}
 }
 
 func TruncatePostsTable() {
 	_, err := config.DB.Exec(sqlTruncatePosts)
 	if err != nil {
-		log.Fatalln("Can not do pre exectute", err.Error())
+		config.Logger.Fatal("TruncatePostsTable: Can not do pre exectute", err.Error())
 	}
 }
 
-var sqlTruncateUsers = `truncate table users`
+var sqlTruncateUsers = `truncate table users CASCADE`
 
-var sqlTruncateThreads = `truncate table threads`
+var sqlTruncateThreads = `truncate table threads CASCADE`
 
-var sqlTruncateForums = `truncate table forums`
+var sqlTruncateForums = `truncate table forums CASCADE`
 
-var sqlTruncatePosts = `truncate table posts`
+var sqlTruncatePosts = `truncate table posts CASCADE`
 
 var sqlDBInfo = `select
   (select count(*) from posts) as posts,

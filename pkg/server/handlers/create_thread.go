@@ -29,7 +29,7 @@ func CreateThreadHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	thread.Forum = slug
 
-	status := models.CreateThread(&thread)
+	status, id := models.CreateThread(&thread)
 	if status == http.StatusNotFound {
 		message := fmt.Sprint("Can not find author or forum!")
 		error := api.Error{
@@ -57,8 +57,9 @@ func CreateThreadHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	thread, status = models.SelectThreadByTitle(thread.Title)
-	if status == http.StatusNotFound {
+	// bug, select thread by forum and title !!!! here
+	thread, err = models.ThreadById(id)
+	if err != nil {
 		w.WriteHeader(http.StatusNotFound)
 		log.Fatalln("Can not search created thread")
 

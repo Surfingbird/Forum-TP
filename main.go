@@ -12,8 +12,12 @@ import (
 )
 
 func main() {
+
 	log.Println("Server started!")
-	models.TruncateAllTables()
+	err := config.DB.Ping()
+	if err != nil {
+		log.Fatal("Can not connect to DB!")
+	}
 
 	r := mux.NewRouter()
 	r.Use(commonMiddleware)
@@ -23,13 +27,13 @@ func main() {
 	r.HandleFunc("/api/forum/{slug}/details", handlers.ForumHandler).Methods("GET")
 	r.HandleFunc("/api/forum/{slug}/threads", handlers.ForumsBranchsHandler).Methods("GET")
 	r.HandleFunc("/api/forum/{slug}/users", handlers.ForumsUsersHandlers).Methods("GET")
-	//
+
 	r.HandleFunc("/api/post/{id}/details", handlers.PostFullHandler).Methods("GET")
 	r.HandleFunc("/api/post/{id}/details", handlers.UpdatePostHandler).Methods("POST")
-	//
+
 	r.HandleFunc("/api/service/clear", handlers.ClearDB).Methods("POST")
 	r.HandleFunc("/api/service/status", handlers.DBInfoHandler).Methods("GET")
-	//
+
 	r.HandleFunc("/api/thread/{slug_or_id}/create", handlers.CreatePostHandler).Methods("POST")
 	r.HandleFunc("/api/thread/{slug_or_id}/details", handlers.ThreadInfo).Methods("GET")
 	r.HandleFunc("/api/thread/{slug_or_id}/details", handlers.UpdateBranchHandler).Methods("POST")
@@ -39,6 +43,10 @@ func main() {
 	r.HandleFunc("/api/user/{nickname}/create", handlers.CreateUserHandler).Methods("POST")
 	r.HandleFunc("/api/user/{nickname}/profile", handlers.ProfileHandler).Methods("GET")
 	r.HandleFunc("/api/user/{nickname}/profile", handlers.UpdateProfileHandler).Methods("POST")
+
+	r.HandleFunc("/delete", func(w http.ResponseWriter, r *http.Request) {
+		models.TruncateAllTables()
+	})
 
 	log.Fatalln(http.ListenAndServe(":"+config.PORT, r))
 }
