@@ -4,69 +4,82 @@ import (
 	"database/sql"
 	"log"
 	"net/http"
-	"strconv"
 	"time"
 
 	"DB_Project_TP/api"
 	"DB_Project_TP/config"
 )
 
-func CreatePost(posts []api.Post, treadID string) (status int) {
-	var id string
-	_, err := strconv.Atoi(treadID)
+func CreatePost(posts []api.Post, treadID int) (status int, postsId []int) {
+	postsId = []int{}
+
+	tx, _ := config.DB.Begin()
+	stmnt, err := tx.Prepare(sqlInsertPost)
 	if err != nil {
-		idT, status := ThreadIdbySlug(treadID)
-		if status == http.StatusNotFound {
-			return http.StatusNotFound
-		}
+		tx.Rollback()
 
-		id = strconv.Itoa(idT)
-	} else {
-		id = treadID
-	}
-
-	ID, _ := strconv.Atoi(id)
-	if ok := CheckThreadById(ID); !ok {
-		return http.StatusNotFound
+		config.Logger.Fatal(err.Error())
 	}
 
 	time := time.Now().Format(time.UnixDate)
-
 	for _, post := range posts {
-		if ok := CheckParent(post.Parent, ID); !ok {
-			return http.StatusConflict
+		if ok := CheckParent(post.Parent, treadID); !ok {
+			status = http.StatusConflict
+			tx.Rollback()
+			postsId = []int{}
+
+			return
 		}
 
 		if ok := CheckUser(post.Author); !ok {
-			return http.StatusNotFound
+			status = http.StatusNotFound
+			tx.Rollback()
+			postsId = []int{}
+
+			return
 		}
 
-		post.Thread = uint(ID)
+		post.Thread = uint(treadID)
 		post.Forum, _ = GetForumByThread(post.Thread)
 
-		_, err := config.DB.Exec(sqlInsertPost,
+		var postId int
+		err := stmnt.QueryRow(
 			post.Author,
 			time,
 			post.Forum,
 			post.Message,
 			post.Parent,
-			post.Thread,
-		)
+			post.Thread).Scan(&postId)
 		if err != nil {
-			log.Fatalln("CreatePost", err.Error())
+			tx.Rollback()
+			postsId = []int{}
+
+			config.Logger.Fatal("CreatePost", err.Error())
 		}
+
+		postsId = append(postsId, postId)
 	}
 
-	return http.StatusCreated
+	err = tx.Commit()
+	if err != nil {
+		tx.Rollback()
+		postsId = []int{}
+
+		config.Logger.Fatal("CreatePost", err.Error())
+	}
+
+	status = http.StatusCreated
+
+	return
 }
 
-func SelectCreatedPosts(posts []api.Post) []api.Post {
+func SelectCreatedPosts(postsId []int) []api.Post {
 	postsFull := []api.Post{}
 
-	for _, post := range posts {
+	for _, postId := range postsId {
 		postFull := api.Post{}
 
-		row := config.DB.QueryRow(sqlSelectAnotherPostParams, post.Author, post.Message)
+		row := config.DB.QueryRow(sqlSelectAnotherPostParams, postId)
 		err := row.Scan(&postFull.Author,
 			&postFull.Created,
 			&postFull.Forum,
@@ -174,12 +187,13 @@ var sqlInsertPost = `INSERT INTO posts (author, created, forum, message, parent,
  				VALUES ($1, $2, $3, $4, $5, $6,
                 (SELECT path FROM posts WHERE id = $5)
                 ||
-                (SELECT currval('posts_id_seq')))`
+				(SELECT currval('posts_id_seq')))
+				RETURNING id`
 
 var sqlCheckParentPost = `select id from posts where id = $1 and thread = $2`
 
 var sqlSelectAnotherPostParams = `select author, created, forum, id, message, parent, thread
-from posts where author = $1 and message = $2 `
+from posts where id = $1`
 
 var sqlCheckPost = `select id from posts where id = $1`
 

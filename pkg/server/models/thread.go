@@ -224,7 +224,6 @@ func ThreadById(id int64) (thread api.Thread, err error) {
 		return
 	}
 
-	// author, created, forum, id, message, slug, title, votes
 	err = row.Scan(&thread.Author,
 		&thread.Created,
 		&thread.Forum,

@@ -14,7 +14,22 @@ import (
 
 func CreatePostHandler(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	treadID := vars["slug_or_id"]
+	slugOrId := vars["slug_or_id"]
+	threadId, status := models.ThreadIDFromUrl(slugOrId)
+	if status == http.StatusNotFound {
+		message := "There is no this thread"
+		error := api.Error{
+			Message: message,
+		}
+
+		w.WriteHeader(http.StatusNotFound)
+		err := json.NewEncoder(w).Encode(error)
+		if err != nil {
+			log.Fatalln("ForumsBranchsHandler, write json: ", err.Error())
+		}
+
+		return
+	}
 
 	body, err := ioutil.ReadAll(r.Body)
 	if err != nil {
@@ -27,7 +42,7 @@ func CreatePostHandler(w http.ResponseWriter, r *http.Request) {
 		log.Fatalln("CreatePostHandler, unmarshal json: ", err.Error())
 	}
 
-	status := models.CreatePost(posts, treadID)
+	status, postsId := models.CreatePost(posts, threadId)
 	if status == http.StatusConflict {
 		message := "There is no post's parent"
 		error := api.Error{
@@ -58,7 +73,7 @@ func CreatePostHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	postsFull := models.SelectCreatedPosts(posts)
+	postsFull := models.SelectCreatedPosts(postsId)
 
 	w.WriteHeader(http.StatusCreated)
 	err = json.NewEncoder(w).Encode(postsFull)
