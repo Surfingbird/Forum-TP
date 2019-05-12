@@ -1,31 +1,24 @@
 package handlers
 
 import (
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
-	"log"
 	"net/http"
 
 	"DB_Project_TP/api"
 	"DB_Project_TP/pkg/server/models"
 
-	"github.com/gorilla/mux"
+	"github.com/gin-gonic/gin"
 )
 
-func UpdateProfileHandler(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	nickname := vars["nickname"]
+func UpdateProfileHandler(c *gin.Context) {
+	nickname := c.Param("nickname")
 
 	update := api.UpdateUser{}
-	body, err := ioutil.ReadAll(r.Body)
+	err := c.BindJSON(&update)
 	if err != nil {
-		log.Fatalln("UpdateProfileHandler, read json: ", err.Error())
-	}
+		c.AbortWithStatus(http.StatusBadRequest)
 
-	err = json.Unmarshal(body, &update)
-	if err != nil {
-		log.Fatalln("UpdateProfileHandler, unmarshal json: ", err.Error())
+		return
 	}
 
 	user, status := models.UpdateUser(&update, nickname)
@@ -35,11 +28,7 @@ func UpdateProfileHandler(w http.ResponseWriter, r *http.Request) {
 			Message: message,
 		}
 
-		w.WriteHeader(http.StatusNotFound)
-		err = json.NewEncoder(w).Encode(error)
-		if err != nil {
-			log.Fatalln("UpdateProfileHandler, write json: ", err.Error())
-		}
+		c.JSON(http.StatusNotFound, error)
 
 		return
 	}
@@ -50,17 +39,10 @@ func UpdateProfileHandler(w http.ResponseWriter, r *http.Request) {
 			Message: message,
 		}
 
-		w.WriteHeader(http.StatusConflict)
-		err = json.NewEncoder(w).Encode(error)
-		if err != nil {
-			log.Fatalln("UpdateProfileHandler, write json: ", err.Error())
-		}
+		c.JSON(http.StatusConflict, error)
 
 		return
 	}
 
-	err = json.NewEncoder(w).Encode(user)
-	if err != nil {
-		log.Fatalln("UpdateProfileHandler, write json: ", err.Error())
-	}
+	c.JSON(http.StatusOK, user)
 }

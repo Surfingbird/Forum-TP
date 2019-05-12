@@ -1,44 +1,36 @@
 package handlers
 
 import (
-	"encoding/json"
 	"log"
 	"net/http"
 
 	"DB_Project_TP/api"
 	"DB_Project_TP/pkg/server/models"
 
-	"github.com/gorilla/mux"
+	"github.com/gin-gonic/gin"
 )
 
-func SortedPostsHandler(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	slugOrID := vars["slug_or_id"]
+func SortedPostsHandler(c *gin.Context) {
+	slugOrID := c.Param("slug_or_id")
 	threadID, status := models.ThreadIDFromUrl(slugOrID)
 	if status == http.StatusNotFound {
-		w.WriteHeader(http.StatusNotFound)
 		message := "There is not this thread"
 		error := api.Error{
 			Message: message,
 		}
-		err := json.NewEncoder(w).Encode(error)
-		if err != nil {
-			log.Fatalln("SortedPostsHandler, write json: ", err.Error())
-		}
+
+		c.JSON(http.StatusNotFound, error)
 
 		return
 	}
 
 	params := &api.PostsSorted{}
-	err := decoder.Decode(params, r.URL.Query())
+	err := decoder.Decode(params, c.Request.URL.Query())
 	if err != nil {
 		log.Fatalln("SortedPostsHandler", err.Error())
 	}
 
 	posts := models.SortedPosts(params, threadID)
 
-	err = json.NewEncoder(w).Encode(posts)
-	if err != nil {
-		log.Fatalln("SortedPostsHandler, write json: ", err.Error())
-	}
+	c.JSON(http.StatusOK, posts)
 }

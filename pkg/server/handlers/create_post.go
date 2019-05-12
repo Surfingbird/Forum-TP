@@ -1,20 +1,16 @@
 package handlers
 
 import (
-	"encoding/json"
-	"io/ioutil"
-	"log"
 	"net/http"
 
 	"DB_Project_TP/api"
 	"DB_Project_TP/pkg/server/models"
 
-	"github.com/gorilla/mux"
+	"github.com/gin-gonic/gin"
 )
 
-func CreatePostHandler(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	slugOrId := vars["slug_or_id"]
+func CreatePostHandler(c *gin.Context) {
+	slugOrId := c.Param("slug_or_id")
 	threadId, status := models.ThreadIDFromUrl(slugOrId)
 	if status == http.StatusNotFound {
 		message := "There is no this thread"
@@ -22,24 +18,17 @@ func CreatePostHandler(w http.ResponseWriter, r *http.Request) {
 			Message: message,
 		}
 
-		w.WriteHeader(http.StatusNotFound)
-		err := json.NewEncoder(w).Encode(error)
-		if err != nil {
-			log.Fatalln("ForumsBranchsHandler, write json: ", err.Error())
-		}
+		c.JSON(http.StatusNotFound, error)
 
 		return
 	}
 
-	body, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		log.Fatalln("CreatePostHandler, read json: ", err.Error())
-	}
-
 	posts := []api.Post{}
-	err = json.Unmarshal(body, &posts)
+	err := c.BindJSON(&posts)
 	if err != nil {
-		log.Fatalln("CreatePostHandler, unmarshal json: ", err.Error())
+		c.AbortWithStatus(http.StatusBadRequest)
+
+		return
 	}
 
 	status, postsId := models.CreatePost(posts, threadId)
@@ -49,11 +38,7 @@ func CreatePostHandler(w http.ResponseWriter, r *http.Request) {
 			Message: message,
 		}
 
-		w.WriteHeader(http.StatusConflict)
-		err := json.NewEncoder(w).Encode(error)
-		if err != nil {
-			log.Fatalln("ForumsBranchsHandler, write json: ", err.Error())
-		}
+		c.JSON(http.StatusConflict, error)
 
 		return
 	}
@@ -64,20 +49,12 @@ func CreatePostHandler(w http.ResponseWriter, r *http.Request) {
 			Message: message,
 		}
 
-		w.WriteHeader(http.StatusNotFound)
-		err := json.NewEncoder(w).Encode(error)
-		if err != nil {
-			log.Fatalln("ForumsBranchsHandler, write json: ", err.Error())
-		}
+		c.JSON(http.StatusNotFound, error)
 
 		return
 	}
 
 	postsFull := models.SelectCreatedPosts(postsId)
 
-	w.WriteHeader(http.StatusCreated)
-	err = json.NewEncoder(w).Encode(postsFull)
-	if err != nil {
-		log.Fatalln("ForumsBranchsHandler, write json: ", err.Error())
-	}
+	c.JSON(http.StatusCreated, postsFull)
 }

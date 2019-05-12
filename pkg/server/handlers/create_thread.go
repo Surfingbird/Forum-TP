@@ -1,31 +1,23 @@
 package handlers
 
 import (
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"net/http"
 
 	"DB_Project_TP/api"
 	"DB_Project_TP/pkg/server/models"
 
-	"github.com/gorilla/mux"
+	"github.com/gin-gonic/gin"
 )
 
-func CreateThreadHandler(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	slug := vars["slug"]
-
+func CreateThreadHandler(c *gin.Context, slug string) {
 	thread := api.Thread{}
-	body, err := ioutil.ReadAll(r.Body)
+	err := c.BindJSON(&thread)
 	if err != nil {
-		log.Fatalln("CreateThreadHandler, read json: ", err.Error())
-	}
+		c.AbortWithStatus(http.StatusBadRequest)
 
-	err = json.Unmarshal(body, &thread)
-	if err != nil {
-		log.Fatalln("CreateThreadHandler, unmarshal json: ", err.Error())
+		return
 	}
 	thread.Forum = slug
 
@@ -36,39 +28,26 @@ func CreateThreadHandler(w http.ResponseWriter, r *http.Request) {
 			Message: message,
 		}
 
-		w.WriteHeader(http.StatusNotFound)
-		err := json.NewEncoder(w).Encode(error)
-		if err != nil {
-			log.Fatalln("CreateThreadHandler, write json: ", err.Error())
-		}
+		c.JSON(http.StatusNotFound, error)
 
 		return
 	}
 
 	// TODO исправить узкое место
 	if status == http.StatusConflict {
-		w.WriteHeader(http.StatusConflict)
-
 		thread, _ = models.SelectThread(thread.Title, thread.Slug)
-		err = json.NewEncoder(w).Encode(thread)
-		if err != nil {
-			log.Fatalln("CreateThreadHandler, write json: ", err.Error())
-		}
+		c.JSON(http.StatusConflict, thread)
 
 		return
 	}
 
 	thread, err = models.ThreadById(id)
 	if err != nil {
-		w.WriteHeader(http.StatusNotFound)
+		c.AbortWithStatus(http.StatusNotFound)
 		log.Fatalln("Can not search created thread")
 
 		return
 	}
 
-	w.WriteHeader(http.StatusCreated)
-	err = json.NewEncoder(w).Encode(thread)
-	if err != nil {
-		log.Fatalln("CreateThreadHandler, write json: ", err.Error())
-	}
+	c.JSON(http.StatusCreated, thread)
 }

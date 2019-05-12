@@ -8,10 +8,11 @@ import (
 	"DB_Project_TP/pkg/server/handlers"
 	"DB_Project_TP/pkg/server/models"
 
-	"github.com/gorilla/mux"
+	"github.com/gin-gonic/gin"
 )
 
 func main() {
+	defer config.Logger.Sync()
 
 	log.Println("Server started!")
 	err := config.DB.Ping()
@@ -19,42 +20,58 @@ func main() {
 		log.Fatalf("Can not connect to DB: %v", err.Error())
 	}
 
-	r := mux.NewRouter()
-	r.Use(commonMiddleware)
+	r := gin.Default()
+	r.Use(ContentTypeMiddleware)
 
-	r.HandleFunc("/api/forum/create", handlers.CreateForumHandler).Methods("POST")
-	r.HandleFunc("/api/forum/{slug}/create", handlers.CreateThreadHandler).Methods("POST")
-	r.HandleFunc("/api/forum/{slug}/details", handlers.ForumHandler).Methods("GET")
-	r.HandleFunc("/api/forum/{slug}/threads", handlers.ForumsBranchsHandler).Methods("GET")
-	r.HandleFunc("/api/forum/{slug}/users", handlers.ForumsUsersHandlers).Methods("GET")
+	forum := r.Group("/api/forum")
+	forum.POST("/:root", CrunchHandler)
+	forum.POST("/:root/:branch", CrunchHandler)
+	forum.GET("/:slug/details", handlers.ForumHandler)
+	forum.GET("/:slug/threads", handlers.ForumsBranchsHandler)
+	forum.GET("/:slug/users", handlers.ForumsUsersHandlers)
 
-	r.HandleFunc("/api/post/{id}/details", handlers.PostFullHandler).Methods("GET")
-	r.HandleFunc("/api/post/{id}/details", handlers.UpdatePostHandler).Methods("POST")
+	post := r.Group("/api/post")
+	post.GET("/:id/details", handlers.PostFullHandler)
+	post.POST("/:id/details", handlers.UpdatePostHandler)
 
-	r.HandleFunc("/api/service/clear", handlers.ClearDB).Methods("POST")
-	r.HandleFunc("/api/service/status", handlers.DBInfoHandler).Methods("GET")
+	service := r.Group("/api/service")
+	service.POST("/clear", handlers.ClearDB)
+	service.GET("/status", handlers.DBInfoHandler)
 
-	r.HandleFunc("/api/thread/{slug_or_id}/create", handlers.CreatePostHandler).Methods("POST")
-	r.HandleFunc("/api/thread/{slug_or_id}/details", handlers.ThreadInfo).Methods("GET")
-	r.HandleFunc("/api/thread/{slug_or_id}/details", handlers.UpdateBranchHandler).Methods("POST")
-	r.HandleFunc("/api/thread/{slug_or_id}/posts", handlers.SortedPostsHandler).Methods("GET")
-	r.HandleFunc("/api/thread/{slug_or_id}/vote", handlers.BranchVoteHandler).Methods("POST")
+	thread := r.Group("/api/thread")
+	thread.POST("/:slug_or_id/create", handlers.CreatePostHandler)
+	thread.GET("/:slug_or_id/details", handlers.ThreadInfo)
+	thread.POST("/:slug_or_id/details", handlers.UpdateBranchHandler)
+	thread.GET("/:slug_or_id/posts", handlers.SortedPostsHandler)
+	thread.POST("/:slug_or_id/vote", handlers.BranchVoteHandler)
 
-	r.HandleFunc("/api/user/{nickname}/create", handlers.CreateUserHandler).Methods("POST")
-	r.HandleFunc("/api/user/{nickname}/profile", handlers.ProfileHandler).Methods("GET")
-	r.HandleFunc("/api/user/{nickname}/profile", handlers.UpdateProfileHandler).Methods("POST")
+	user := r.Group("api/user")
+	user.POST("/:nickname/create", handlers.CreateUserHandler)
+	user.GET("/:nickname/profile", handlers.ProfileHandler)
+	user.POST("/:nickname/profile", handlers.UpdateProfileHandler)
 
-	r.HandleFunc("/delete", func(w http.ResponseWriter, r *http.Request) {
+	r.GET("/delete", func(c *gin.Context) {
 		models.TruncateAllTables()
 	})
 
 	log.Fatalln(http.ListenAndServe(":"+config.PORT, r))
 }
 
-func commonMiddleware(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		w.Header().Add("Content-Type", "application/json")
+func ContentTypeMiddleware(c *gin.Context) {
+	c.Header("Content-Type", "application/json")
 
-		next.ServeHTTP(w, r)
-	})
+	c.Next()
+}
+
+func CrunchHandler(c *gin.Context) {
+	root := c.Param("root")
+	branch := c.Param("branch")
+
+	if root == "create" {
+		handlers.CreateForumHandler(c)
+	}
+
+	if branch == "create" && root != "" {
+		handlers.CreateThreadHandler(c, root)
+	}
 }

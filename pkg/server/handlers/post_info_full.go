@@ -1,8 +1,6 @@
 package handlers
 
 import (
-	"encoding/json"
-	"log"
 	"net/http"
 	"regexp"
 	"strconv"
@@ -10,31 +8,27 @@ import (
 	"DB_Project_TP/api"
 	"DB_Project_TP/pkg/server/models"
 
-	"github.com/gorilla/mux"
+	"github.com/gin-gonic/gin"
 )
 
-func PostFullHandler(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	per := vars["id"]
+func PostFullHandler(c *gin.Context) {
+	per := c.Param("id")
+
 	id, err := strconv.Atoi(per)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
+		c.AbortWithStatus(http.StatusBadRequest)
 
 		return
 	}
 
 	post, status := models.SelectPost(id)
 	if status == http.StatusNotFound {
-		w.WriteHeader(http.StatusNotFound)
-
 		message := "there is no post with this id"
 		error := api.Error{
 			Message: message,
 		}
-		err = json.NewEncoder(w).Encode(error)
-		if err != nil {
-			log.Fatalln("PostFullHandler, write json: ", err.Error())
-		}
+
+		c.JSON(http.StatusNotFound, error)
 
 		return
 	}
@@ -42,12 +36,13 @@ func PostFullHandler(w http.ResponseWriter, r *http.Request) {
 	postFull := map[string]interface{}{}
 	postFull["post"] = post
 
-	str := r.URL.RawQuery
+	str := c.Request.URL.RawQuery
 
 	if ok, _ := regexp.Match("user", []byte(str)); ok {
 		author, err := models.SelectUser(post.Author)
 		if err != nil {
-			w.WriteHeader(http.StatusNotFound)
+			c.AbortWithStatus(http.StatusNotFound)
+
 			return
 		}
 
@@ -56,7 +51,8 @@ func PostFullHandler(w http.ResponseWriter, r *http.Request) {
 	if ok, _ := regexp.Match("forum", []byte(str)); ok {
 		forum, status := models.SelectForum(post.Forum)
 		if status == http.StatusNotFound {
-			w.WriteHeader(http.StatusNotFound)
+			c.AbortWithStatus(http.StatusNotFound)
+
 			return
 		}
 
@@ -65,15 +61,13 @@ func PostFullHandler(w http.ResponseWriter, r *http.Request) {
 	if ok, _ := regexp.Match("thread", []byte(str)); ok {
 		thread, status := models.SelectThreadBySlugOrID(strconv.Itoa(int(post.Thread)))
 		if status == http.StatusNotFound {
-			w.WriteHeader(http.StatusNotFound)
+			c.AbortWithStatus(http.StatusNotFound)
+
 			return
 		}
 
 		postFull["thread"] = thread
 	}
 
-	err = json.NewEncoder(w).Encode(postFull)
-	if err != nil {
-		log.Fatalln("PostFullHandler, write json: ", err.Error())
-	}
+	c.JSON(http.StatusOK, postFull)
 }

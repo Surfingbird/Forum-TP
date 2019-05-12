@@ -1,20 +1,17 @@
 package handlers
 
 import (
-	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 
 	"DB_Project_TP/api"
 	"DB_Project_TP/pkg/server/models"
 
-	"github.com/gorilla/mux"
+	"github.com/gin-gonic/gin"
 )
 
-func ProfileHandler(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	nickname := vars["nickname"]
+func ProfileHandler(c *gin.Context) {
+	nickname := c.Param("nickname")
 
 	user, err := models.SelectUser(nickname)
 	if err != nil {
@@ -23,17 +20,10 @@ func ProfileHandler(w http.ResponseWriter, r *http.Request) {
 			Message: message,
 		}
 
-		w.WriteHeader(http.StatusNotFound)
-		err = json.NewEncoder(w).Encode(error)
-		if err != nil {
-			log.Fatalln("CreateUserHandler, write json: ", err.Error())
-		}
+		c.JSON(http.StatusNotFound, error)
 
 		return
 	}
 
-	err = json.NewEncoder(w).Encode(user)
-	if err != nil {
-		log.Fatalln("CreateUserHandler, write json: ", err.Error())
-	}
+	c.JSON(http.StatusOK, user)
 }

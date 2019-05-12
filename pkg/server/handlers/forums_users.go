@@ -1,44 +1,36 @@
 package handlers
 
 import (
-	"encoding/json"
-	"log"
 	"net/http"
 
 	"DB_Project_TP/api"
 	"DB_Project_TP/pkg/server/models"
 
-	"github.com/gorilla/mux"
+	"github.com/gin-gonic/gin"
 )
 
-func ForumsUsersHandlers(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	slug := vars["slug"]
+func ForumsUsersHandlers(c *gin.Context) {
+	slug := c.Param("slug")
 
 	params := api.ForumsUsersQuery{}
-	err := decoder.Decode(&params, r.URL.Query())
+	err := decoder.Decode(&params, c.Request.URL.Query())
 	if err != nil {
-		log.Fatalln("ForumsUsersHandlers: Can not parse url")
+		c.AbortWithStatus(http.StatusBadRequest)
+
+		return
 	}
 
 	posts, status := models.SelectForumsUsers(params, slug)
 	if status == http.StatusNotFound {
-		w.WriteHeader(http.StatusNotFound)
 		message := "there is no this forum"
 		error := api.Error{
 			Message: message,
 		}
 
-		err = json.NewEncoder(w).Encode(error)
-		if err != nil {
-			log.Fatalln("ForumsUsersHandlers, write json: ", err.Error())
-		}
+		c.JSON(http.StatusNotFound, error)
 
 		return
 	}
 
-	err = json.NewEncoder(w).Encode(posts)
-	if err != nil {
-		log.Fatalln("ForumsUsersHandlers, write json: ", err.Error())
-	}
+	c.JSON(http.StatusOK, posts)
 }

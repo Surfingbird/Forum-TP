@@ -1,26 +1,23 @@
 package handlers
 
 import (
-	"encoding/json"
 	"fmt"
-	"io/ioutil"
-	"log"
 	"net/http"
 
 	"DB_Project_TP/api"
+	"DB_Project_TP/config"
 	"DB_Project_TP/pkg/server/models"
+
+	"github.com/gin-gonic/gin"
 )
 
-func CreateForumHandler(w http.ResponseWriter, r *http.Request) {
+func CreateForumHandler(c *gin.Context) {
 	forum := api.Forum{}
-	body, err := ioutil.ReadAll(r.Body)
+	err := c.BindJSON(&forum)
 	if err != nil {
-		log.Fatalln("CreateForumHandler, read json: ", err.Error())
-	}
+		c.AbortWithStatus(http.StatusBadRequest)
 
-	err = json.Unmarshal(body, &forum)
-	if err != nil {
-		log.Fatalln("CreateForumHandler, unmarshal json: ", err.Error())
+		return
 	}
 
 	status := models.CreateForum(&forum)
@@ -30,11 +27,7 @@ func CreateForumHandler(w http.ResponseWriter, r *http.Request) {
 			Message: message,
 		}
 
-		w.WriteHeader(http.StatusNotFound)
-		err = json.NewEncoder(w).Encode(error)
-		if err != nil {
-			log.Fatalln("CreateForumHandler, write json: ", err.Error())
-		}
+		c.JSON(http.StatusNotFound, error)
 
 		return
 	}
@@ -42,21 +35,13 @@ func CreateForumHandler(w http.ResponseWriter, r *http.Request) {
 	if status == http.StatusConflict {
 		forum, status := models.SelectForum(forum.Slug)
 		if status == http.StatusNotFound {
-			log.Fatalln("Can not find already exists forum")
+			config.Logger.Fatal("Can not find already exists forum")
 		}
 
-		w.WriteHeader(http.StatusConflict)
-		err = json.NewEncoder(w).Encode(forum)
-		if err != nil {
-			log.Fatalln("CreateForumHandler, write json: ", err.Error())
-		}
+		c.JSON(http.StatusConflict, forum)
 
 		return
 	}
 
-	w.WriteHeader(http.StatusCreated)
-	err = json.NewEncoder(w).Encode(forum)
-	if err != nil {
-		log.Fatalln("CreateForumHandler, write json: ", err.Error())
-	}
+	c.JSON(http.StatusCreated, forum)
 }

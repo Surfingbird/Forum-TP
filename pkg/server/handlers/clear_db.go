@@ -2,9 +2,10 @@ package handlers
 
 import (
 	"DB_Project_TP/pkg/server/models"
-	"net/http"
+
+	"github.com/gin-gonic/gin"
 )
 
-func ClearDB(w http.ResponseWriter, r *http.Request) {
+func ClearDB(c *gin.Context) {
 	models.TruncateAllTables()
 }

@@ -1,57 +1,44 @@
 package handlers
 
 import (
-	"encoding/json"
-	"io/ioutil"
-	"log"
+	"DB_Project_TP/api"
+	"DB_Project_TP/pkg/server/models"
 	"net/http"
 	"strconv"
 
-	"DB_Project_TP/api"
-	"DB_Project_TP/pkg/server/models"
-
-	"github.com/gorilla/mux"
+	"github.com/gin-gonic/gin"
 )
 
-func UpdatePostHandler(w http.ResponseWriter, r *http.Request) {
-	vars := mux.Vars(r)
-	per := vars["id"]
+func UpdatePostHandler(c *gin.Context) {
+	per := c.Param("id")
 	id, err := strconv.Atoi(per)
 	if err != nil {
-		w.WriteHeader(http.StatusBadRequest)
+		c.AbortWithStatus(http.StatusBadRequest)
 
 		return
 	}
 
-	body, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		log.Fatalln("UpdatePostHandler, read json: ", err.Error())
-	}
-
 	update := api.PostUpdaet{}
-	err = json.Unmarshal(body, &update)
+	err = c.BindJSON(&update)
 	if err != nil {
-		log.Fatalln("UpdatePostHandler, unmarshal json: ", err.Error())
+		c.AbortWithStatus(http.StatusBadRequest)
+
+		return
 	}
 
 	status := models.UpdatePost(id, update)
 	if status == http.StatusNotFound {
-		w.WriteHeader(http.StatusNotFound)
 		msg := "Can not find post with this ID"
 		error := api.Error{
 			Message: msg,
 		}
-		err = json.NewEncoder(w).Encode(error)
-		if err != nil {
-			log.Fatalln("UpdatePostHandler, write json: ", err.Error())
-		}
+
+		c.JSON(http.StatusNotFound, error)
 
 		return
 	}
 
 	post, _ := models.SelectPost(id)
-	err = json.NewEncoder(w).Encode(post)
-	if err != nil {
-		log.Fatalln("UpdatePostHandler, write json: ", err.Error())
-	}
+
+	c.JSON(http.StatusOK, post)
 }

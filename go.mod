@@ -4,6 +4,7 @@ go 1.12
 
 require (
 	github.com/Surfingbird/DB_Project_TP v0.0.0-20190330125450-40f36129ad6d
+	github.com/gin-gonic/gin v1.4.0
 	github.com/gorilla/mux v1.7.0
 	github.com/gorilla/schema v1.0.2
 	github.com/lib/pq v1.0.0
