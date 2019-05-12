@@ -45,6 +45,7 @@ func CreateThreadHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// TODO исправить узкое место
 	if status == http.StatusConflict {
 		w.WriteHeader(http.StatusConflict)
 
@@ -57,7 +58,6 @@ func CreateThreadHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// bug, select thread by forum and title !!!! here
 	thread, err = models.ThreadById(id)
 	if err != nil {
 		w.WriteHeader(http.StatusNotFound)

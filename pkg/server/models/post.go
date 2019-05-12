@@ -9,26 +9,7 @@ import (
 
 	"DB_Project_TP/api"
 	"DB_Project_TP/config"
-
-	"go.uber.org/zap"
-	"go.uber.org/zap/zapcore"
 )
-
-var logger = createGlobalLogger()
-
-func createGlobalLogger() *zap.SugaredLogger {
-	config := zap.NewDevelopmentConfig()
-	config.EncoderConfig.EncodeLevel = zapcore.CapitalColorLevelEncoder
-	logger, err := config.Build()
-	if err != nil {
-		log.Fatalln("createLogger", err.Error)
-	}
-
-	// func ErrorOutput - определить куда летят внутренние ошибки логгера
-	// toDo сделать advance cfg c определением места логирования
-
-	return logger.Sugar()
-}
 
 func CreatePost(posts []api.Post, treadID string) (status int) {
 	var id string

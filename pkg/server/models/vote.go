@@ -68,6 +68,7 @@ func CheckUserVoteInThread(nickname string, threadID int) bool {
 	return true
 }
 
+// TODO
 func UpdateUserVote(vote api.Vote, id int) (prevDiff int) {
 	row := config.DB.QueryRow(sqlCheckUserVote, vote.Nickname, id)
 	err := row.Scan(&prevDiff)
@@ -75,7 +76,7 @@ func UpdateUserVote(vote api.Vote, id int) (prevDiff int) {
 		log.Fatalln("UpdateUserVote: ", err.Error())
 	}
 
-	_, err = config.DB.Exec(sqlUpdateUserVote, vote.Voice, id)
+	_, err = config.DB.Exec(sqlUpdateUserVote, vote.Voice, id, vote.Nickname)
 	if err != nil {
 		log.Fatalln("UpdateUserVote: ", err.Error())
 	}
@@ -89,4 +90,4 @@ var sqlSaveUserVote = `insert into votes (v_user, thread, u_vote) values ($1, $2
 
 var sqlCheckUserVote = `select u_vote from votes  where v_user = $1 and thread = $2`
 
-var sqlUpdateUserVote = `update votes set u_vote = $1 where thread = $2`
+var sqlUpdateUserVote = `update votes set u_vote = $1 where thread = $2 and v_user = $3`
