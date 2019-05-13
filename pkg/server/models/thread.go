@@ -311,25 +311,46 @@ func getThreadID(slugOrID string) (id, status int) {
 }
 
 func SelectThreadBySlugOrID(slugOrID string) (thread api.Thread, status int) {
-	id, status := getThreadID(slugOrID)
-	if status == http.StatusNotFound {
-		return thread, http.StatusNotFound
+	id, err := strconv.Atoi(slugOrID)
+	if err != nil {
+		row := config.DB.QueryRow(sqlSelectThreadBySlug, slugOrID)
+		err := row.Scan(&thread.Author,
+			&thread.Created,
+			&thread.Forum,
+			&thread.Id,
+			&thread.Message,
+			&thread.Slug,
+			&thread.Title,
+			&thread.Votes)
+		if err != nil {
+			status = http.StatusNotFound
+
+			return
+		}
+
+		status = http.StatusOK
+
+		return
+	} else {
+		row := config.DB.QueryRow(sqlSelectThreadById, id)
+		err = row.Scan(&thread.Author,
+			&thread.Created,
+			&thread.Forum,
+			&thread.Id,
+			&thread.Message,
+			&thread.Slug,
+			&thread.Title,
+			&thread.Votes)
+		if err != nil {
+			status = http.StatusNotFound
+
+			return
+		}
 	}
 
-	row := config.DB.QueryRow(sqlSelectThreadById, id)
-	err := row.Scan(&thread.Author,
-		&thread.Created,
-		&thread.Forum,
-		&thread.Id,
-		&thread.Message,
-		&thread.Slug,
-		&thread.Title,
-		&thread.Votes)
-	if err == sql.ErrNoRows {
-		return thread, http.StatusNotFound
-	}
+	status = http.StatusOK
 
-	return thread, http.StatusOK
+	return
 }
 
 func UpdateThread(updateThread api.ThreadUpdate, slugOrID string) (status int) {
@@ -408,6 +429,9 @@ var sqlSelectThreadByTitleAndForum = `select author, created, forum, id, message
 
 var sqlSelectThreadById = `select author, created, forum, id, message, slug, title, votes
  from threads where id = $1`
+
+var sqlSelectThreadBySlug = `select author, created, forum, id, message, slug, title, votes
+from threads where slug = $1`
 
 var sqlSelectThreadIdbySlug = `select id from threads where slug = $1`
 

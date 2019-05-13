@@ -10,7 +10,7 @@ import (
 
 func BranchVoteHandler(c *gin.Context) {
 	slugOrId := c.Param("slug_or_id")
-	treadID, status := models.ThreadIDFromUrl(slugOrId)
+	thread, status := models.SelectThreadBySlugOrID(slugOrId)
 	if status == http.StatusNotFound {
 		message := "Can not find thread with this id or slug!"
 		error := api.Error{
@@ -30,7 +30,7 @@ func BranchVoteHandler(c *gin.Context) {
 		return
 	}
 
-	status = models.VoteBranch(vote, treadID)
+	status, diff := models.VoteBranch(vote, thread.Id)
 	if status == http.StatusNotFound {
 		message := "Can not find thread with this id!"
 		error := api.Error{
@@ -42,7 +42,9 @@ func BranchVoteHandler(c *gin.Context) {
 		return
 	}
 
-	thread, _ := models.ThreadById(int64(treadID))
+	thread.Votes += diff
+
+	// thread, _ := models.ThreadById(int64(treadID))
 
 	c.JSON(http.StatusOK, thread)
 }
