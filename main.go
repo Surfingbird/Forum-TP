@@ -20,7 +20,10 @@ func main() {
 		log.Fatalf("Can not connect to DB: %v", err.Error())
 	}
 
+	// TODO при тестировании r := gin.New()
 	r := gin.Default()
+	gin.SetMode(gin.ReleaseMode)
+
 	r.Use(ContentTypeMiddleware)
 
 	forum := r.Group("/api/forum")

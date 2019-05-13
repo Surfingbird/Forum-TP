@@ -32,7 +32,7 @@ func BranchVoteHandler(c *gin.Context) {
 
 	status, diff := models.VoteBranch(vote, thread.Id)
 	if status == http.StatusNotFound {
-		message := "Can not find thread with this id!"
+		message := "Can not find user"
 		error := api.Error{
 			Message: message,
 		}
@@ -43,8 +43,6 @@ func BranchVoteHandler(c *gin.Context) {
 	}
 
 	thread.Votes += diff
-
-	// thread, _ := models.ThreadById(int64(treadID))
 
 	c.JSON(http.StatusOK, thread)
 }
