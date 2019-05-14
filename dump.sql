@@ -1,3 +1,5 @@
+create extension citext;
+
 SET LOCAL synchronous_commit to OFF;
 -- SET LOCAL full_page_writes to OFF;
 
