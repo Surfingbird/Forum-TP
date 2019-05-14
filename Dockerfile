@@ -17,7 +17,7 @@ RUN go get "github.com/gorilla/schema" && go get "go.uber.org/zap"
 RUN go get "go.uber.org/zap/zapcore" && go get "go.uber.org/atomic"
 RUN go get "go.uber.org/multierr"
 
-RUN go mod init DB_Project_TP
+# RUN go mod init DB_Project_TP
 RUN go build
 
 FROM ubuntu:18.04 AS release
