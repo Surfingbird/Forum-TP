@@ -11,12 +11,6 @@ import (
 
 //toDo доделать логику обновления голосований
 func VoteBranch(vote api.Vote, id uint64) (status int, diff int64) {
-	if ok := CheckUser(vote.Nickname); !ok {
-		status = http.StatusNotFound
-
-		return
-	}
-
 	diff = int64(vote.Voice)
 
 	tx, _ := config.DB.Begin()

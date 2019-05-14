@@ -12,10 +12,12 @@ ADD . /go/src/DB_Project_TP
 WORKDIR /go/src/DB_Project_TP
 
 # Собираем и устанавливаем пакет
-RUN go get "github.com/lib/pq" && go get "github.com/gorilla/mux"
+RUN go get "github.com/lib/pq" && go "get github.com/gin-gonic/gin"
 RUN go get "github.com/gorilla/schema" && go get "go.uber.org/zap"
-RUN go get "go.uber.org/zap/zapcore"
+RUN go get "go.uber.org/zap/zapcore" && go get "go.uber.org/atomic"
+RUN go get "go.uber.org/multierr"
 
+RUN go mod init DB_Project_TP
 RUN go build
 
 FROM ubuntu:18.04 AS release
