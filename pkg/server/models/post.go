@@ -22,13 +22,20 @@ func CreatePost(posts []api.Post, treadID int) (status int, postsId []int) {
 	}
 
 	time := time.Now().Format(time.UnixDate)
+	// CheckParent 1 раз
+	var checked bool
 	for _, post := range posts {
-		if ok := CheckParent(post.Parent, treadID); !ok {
-			status = http.StatusConflict
-			tx.Rollback()
-			postsId = []int{}
 
-			return
+		if !checked {
+			if ok := CheckParent(post.Parent, treadID); !ok {
+				status = http.StatusConflict
+				tx.Rollback()
+				postsId = []int{}
+
+				return
+			}
+
+			checked = true
 		}
 
 		if ok := CheckUser(post.Author); !ok {
