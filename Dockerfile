@@ -3,7 +3,7 @@ FROM golang:1.11-stretch AS build
 # Копируем исходный код в Docker-контейнер
 RUN ls
 RUN pwd
-RUN echo $GOPATH
+# RUN echo $GOPATH
 ENV GO111MODULE=on
 # RUN export GO111MODULE=on
 # ADD . /opt/build/golang/

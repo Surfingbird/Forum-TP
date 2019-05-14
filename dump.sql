@@ -1,7 +1,6 @@
 create extension citext;
 
 SET LOCAL synchronous_commit to OFF;
-SET LOCAL full_page_writes to OFF;
 SET statement_timeout = 0;
 SET lock_timeout = 0;
 SET client_encoding = 'UTF8';
