@@ -4,6 +4,7 @@ FROM golang:1.11-stretch AS build
 RUN ls
 RUN pwd
 RUN echo $GOPATH
+RUN export GO111MODULE=on
 # ADD . /opt/build/golang/
 ADD . /go/src/DB_Project_TP
 #ADD common/ /opt/build/common/
@@ -12,6 +13,7 @@ ADD . /go/src/DB_Project_TP
 WORKDIR /go/src/DB_Project_TP
 
 # Собираем и устанавливаем пакет
+RUN go get "go get github.com/urfave/cli"
 RUN go get "github.com/lib/pq" && go "get github.com/gin-gonic/gin"
 RUN go get "github.com/gorilla/schema" && go get "go.uber.org/zap"
 RUN go get "go.uber.org/zap/zapcore" && go get "go.uber.org/atomic"
