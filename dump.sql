@@ -40,6 +40,8 @@ create table threads (
   PRIMARY KEY (id)
 );
 create index idx_thread_slug on threads using btree (slug);
+create index idx_thread_all on threads (id, slug, title, forum, author, created, message, votes);
+
 -- --
 create table posts (
   author citext not null,
