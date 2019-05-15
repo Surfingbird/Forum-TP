@@ -46,6 +46,15 @@ RUN echo "host all  all    0.0.0.0/0  md5" >> /etc/postgresql/$PGVER/main/pg_hba
 # And add ``listen_addresses`` to ``/etc/postgresql/$PGVER/main/postgresql.conf``
 RUN echo "listen_addresses='*'" >> /etc/postgresql/$PGVER/main/postgresql.conf
 
+RUN echo "temp_buffers = 128MB" >> /etc/postgresql/$PGVER/main/postgresql.conf
+RUN echo "work_mem = 64MB" >> /etc/postgresql/$PGVER/main/postgresql.conf
+RUN echo "maintenance_work_mem = 128MB" >> /etc/postgresql/$PGVER/main/postgresql.conf
+RUN echo "log_statement = 'none'" >> /etc/postgresql/$PGVER/main/postgresql.conf
+RUN sed -i.bak -e 's/shared_buffers.*/shared_buffers = 800MB/' /etc/postgresql/$PGVER/main/postgresql.conf
+RUN echo "fsync = off" >> /etc/postgresql/$PGVER/main/postgresql.conf
+RUN echo "synchronous_commit = off" >> /etc/postgresql/$PGVER/main/postgresql.conf
+RUN echo "full_page_writes = off" >> /etc/postgresql/$PGVER/main/postgresql.conf
+
 # Expose the PostgreSQL port
 EXPOSE 5432
 
