@@ -15,12 +15,15 @@ func VoteBranch(vote api.Vote, id uint64) (status int, diff int64) {
 
 	tx, _ := config.DB.Begin()
 
-	if ok := CheckUserVoteInThread(vote.Nickname, id); !ok {
+	//  fix
+	ok, old := CheckUserVoteInThread(vote.Nickname, id)
+	_ = old
+	if !ok {
 		SaveUserVote(vote, id)
 	} else {
-		prevDiff := UpdateUserVote(vote, id)
-		diff -= prevDiff
-		if prevDiff == 0 {
+		UpdateUserVote(vote, id)
+		diff -= old
+		if diff == 0 {
 			status = http.StatusOK
 
 			return
@@ -56,29 +59,23 @@ func SaveUserVote(vote api.Vote, id uint64) {
 	}
 }
 
-func CheckUserVoteInThread(nickname string, threadID uint64) bool {
+func CheckUserVoteInThread(nickname string, threadID uint64) (bool, int64) {
 	row := config.DB.QueryRow(sqlCheckUserVote, nickname, threadID)
-	err := row.Scan()
+
+	var old int64
+	err := row.Scan(&old)
 	if err == sql.ErrNoRows {
-		return false
+		return false, 0
 	}
 
-	return true
+	return true, old
 }
 
-func UpdateUserVote(vote api.Vote, id uint64) (prevDiff int64) {
-	row := config.DB.QueryRow(sqlCheckUserVote, vote.Nickname, id)
-	err := row.Scan(&prevDiff)
+func UpdateUserVote(vote api.Vote, id uint64) {
+	_, err := config.DB.Exec(sqlUpdateUserVote, vote.Voice, id, vote.Nickname)
 	if err != nil {
 		log.Fatalln("UpdateUserVote: ", err.Error())
 	}
-
-	_, err = config.DB.Exec(sqlUpdateUserVote, vote.Voice, id, vote.Nickname)
-	if err != nil {
-		log.Fatalln("UpdateUserVote: ", err.Error())
-	}
-
-	return prevDiff
 }
 
 var sqlVoteForThread = `update threads set votes = votes + $1 where id = $2`
