@@ -84,4 +84,4 @@ var sqlSaveUserVote = `insert into votes (v_user, thread, u_vote) values ($1, $2
 
 var sqlCheckUserVote = `select u_vote from votes  where v_user = $1 and thread = $2`
 
-var sqlUpdateUserVote = `update votes set u_vote = $1 where thread = $2 and v_user = $3`
+var sqlUpdateUserVote = `update votes set u_vote = $1 where v_user = $3 and thread = $2`

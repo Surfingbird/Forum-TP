@@ -10,8 +10,7 @@ import (
 	"DB_Project_TP/config"
 )
 
-func CreatePost(posts []api.Post, treadID int) (status int, postsId []int) {
-	postsId = []int{}
+func CreatePost(posts []*api.Post, treadID int) (status int) {
 
 	tx, _ := config.DB.Begin()
 	stmnt, err := tx.Prepare(sqlInsertPost)
@@ -22,55 +21,45 @@ func CreatePost(posts []api.Post, treadID int) (status int, postsId []int) {
 	}
 
 	time := time.Now().Format(time.UnixDate)
-	// CheckParent 1 раз
-	var checked bool
-	for _, post := range posts {
-
-		if !checked {
-			if ok := CheckParent(post.Parent, treadID); !ok {
-				status = http.StatusConflict
-				tx.Rollback()
-				postsId = []int{}
-
-				return
-			}
-
-			checked = true
-		}
-
-		if ok := CheckUser(post.Author); !ok {
-			status = http.StatusNotFound
+	if len(posts) > 0 {
+		if ok := CheckParent(posts[0].Parent, treadID); !ok {
+			status = http.StatusConflict
 			tx.Rollback()
-			postsId = []int{}
 
 			return
 		}
 
+		if ok := CheckUser(posts[0].Author); !ok {
+			status = http.StatusNotFound
+			tx.Rollback()
+
+			return
+		}
+	}
+
+	for _, post := range posts {
 		post.Thread = uint(treadID)
 		post.Forum, _ = GetForumByThread(post.Thread)
 
-		var postId int
 		err := stmnt.QueryRow(
 			post.Author,
 			time,
 			post.Forum,
 			post.Message,
 			post.Parent,
-			post.Thread).Scan(&postId)
+			post.Thread).Scan(&post.Id, &post.Created)
 		if err != nil {
 			tx.Rollback()
-			postsId = []int{}
 
 			config.Logger.Fatal("CreatePost", err.Error())
 		}
 
-		postsId = append(postsId, postId)
+		// postsId = append(postsId, postId)
 	}
 
 	err = tx.Commit()
 	if err != nil {
 		tx.Rollback()
-		postsId = []int{}
 
 		config.Logger.Fatal("CreatePost", err.Error())
 	}
@@ -195,7 +184,7 @@ var sqlInsertPost = `INSERT INTO posts (author, created, forum, message, parent,
                 (SELECT path FROM posts WHERE id = $5)
                 ||
 				(SELECT currval('posts_id_seq')))
-				RETURNING id`
+				RETURNING id, created`
 
 var sqlCheckParentPost = `select id from posts where id = $1 and thread = $2`
 

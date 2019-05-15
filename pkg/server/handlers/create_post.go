@@ -23,7 +23,7 @@ func CreatePostHandler(c *gin.Context) {
 		return
 	}
 
-	posts := []api.Post{}
+	posts := []*api.Post{}
 	err := c.BindJSON(&posts)
 	if err != nil {
 		c.AbortWithStatus(http.StatusBadRequest)
@@ -31,7 +31,7 @@ func CreatePostHandler(c *gin.Context) {
 		return
 	}
 
-	status, postsId := models.CreatePost(posts, threadId)
+	status = models.CreatePost(posts, threadId)
 	if status == http.StatusConflict {
 		message := "There is no post's parent"
 		error := api.Error{
@@ -54,7 +54,5 @@ func CreatePostHandler(c *gin.Context) {
 		return
 	}
 
-	postsFull := models.SelectCreatedPosts(postsId)
-
-	c.JSON(http.StatusCreated, postsFull)
+	c.JSON(http.StatusCreated, posts)
 }
