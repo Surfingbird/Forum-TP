@@ -18,7 +18,7 @@ RUN go get "github.com/urfave/cli"
 RUN go get "github.com/lib/pq" && go get "github.com/gin-gonic/gin"
 RUN go get "github.com/gorilla/schema" && go get "go.uber.org/zap"
 RUN go get "go.uber.org/zap/zapcore" && go get "go.uber.org/atomic"
-RUN go get "go.uber.org/multierr"
+RUN go get "go.uber.org/multierr" && go get "github.com/jackc/pgx"
 
 # RUN go mod init DB_Project_TP
 RUN go build
