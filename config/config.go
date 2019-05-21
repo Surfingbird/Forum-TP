@@ -5,12 +5,12 @@ import (
 )
 
 var (
-	DBUSER     = "postgres"
-	DBPASSWORD = "2017"
-	DBNAME     = "highload"
-	// DBUSER     = "docker"
-	// DBPASSWORD = "docker"
-	// DBNAME     = "docker"
+	// DBUSER     = "postgres"
+	// DBPASSWORD = "2017"
+	// DBNAME     = "highload"
+	DBUSER     = "docker"
+	DBPASSWORD = "docker"
+	DBNAME     = "docker"
 
 	CONNBDStr        = " user=" + DBUSER + " dbname=" + DBNAME + " password=" + DBPASSWORD + " sslmode=disable"
 	DB               = connectBDpgx(config)
