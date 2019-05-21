@@ -64,7 +64,7 @@ func BranchVoteHandler(c *gin.Context) {
 
 	_, diff := models.VoteBranch(vote, thread.Id)
 
-	thread.Votes += diff
+	thread.Votes += int64(diff)
 
 	c.JSON(http.StatusOK, thread)
 }

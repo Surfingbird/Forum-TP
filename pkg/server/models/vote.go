@@ -2,7 +2,6 @@ package models
 
 import (
 	"DB_Project_TP/api"
-	"database/sql"
 	"log"
 	"net/http"
 
@@ -10,19 +9,16 @@ import (
 )
 
 //toDo доделать логику обновления голосований
-func VoteBranch(vote api.Vote, id uint64) (status int, diff int64) {
-	diff = int64(vote.Voice)
+func VoteBranch(vote api.Vote, id uint64) (status int, diff int) {
+	newv := vote.Voice
+	diff = newv
 
-	tx, _ := config.DB.Begin()
-
-	//  fix
 	ok, old := CheckUserVoteInThread(vote.Nickname, id)
-	_ = old
 	if !ok {
 		SaveUserVote(vote, id)
 	} else {
 		UpdateUserVote(vote, id)
-		diff -= old
+		diff = newv - old
 		if diff == 0 {
 			status = http.StatusOK
 
@@ -35,13 +31,11 @@ func VoteBranch(vote api.Vote, id uint64) (status int, diff int64) {
 		config.Logger.Fatal("VoteBranch", err.Error())
 	}
 
-	rows, _ := res.RowsAffected()
+	rows := res.RowsAffected()
 	if rows != 1 {
-		tx.Rollback()
 		config.Logger.Fatalf("VoteBranch update: expected: %v have %v", 1, rows)
 	}
 
-	tx.Commit()
 	status = http.StatusOK
 
 	return
@@ -53,22 +47,24 @@ func SaveUserVote(vote api.Vote, id uint64) {
 		log.Fatalln("SaveUserVote:", err.Error())
 	}
 
-	rows, _ := res.RowsAffected()
+	rows := res.RowsAffected()
 	if rows != 1 {
 		log.Fatalln("SaveUserVote: expected %v, have %v", 1, rows)
 	}
 }
 
-func CheckUserVoteInThread(nickname string, threadID uint64) (bool, int64) {
-	row := config.DB.QueryRow(sqlCheckUserVote, nickname, threadID)
+func CheckUserVoteInThread(nickname string, threadID uint64) (ok bool, old int) {
+	err := config.DB.QueryRow(sqlCheckUserVote,
+		nickname,
+		threadID).Scan(&old)
 
-	var old int64
-	err := row.Scan(&old)
-	if err == sql.ErrNoRows {
-		return false, 0
+	if err != nil {
+		return
 	}
 
-	return true, old
+	ok = true
+
+	return
 }
 
 func UpdateUserVote(vote api.Vote, id uint64) {

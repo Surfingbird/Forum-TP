@@ -79,7 +79,7 @@ func CheckUser(nickname string) bool {
 		log.Fatalln("CheckUser", err.Error())
 	}
 
-	rows, _ := result.RowsAffected()
+	rows := result.RowsAffected()
 	if rows != 1 {
 		return false
 	}
@@ -101,7 +101,7 @@ func UpdateUser(update *api.UpdateUser, nickname string) (u api.User, status int
 		return u, http.StatusConflict
 	}
 
-	row, _ := result.RowsAffected()
+	row := result.RowsAffected()
 	if row != 1 {
 		log.Fatalln("Count of updated != 1")
 	}

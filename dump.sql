@@ -53,6 +53,7 @@ create table posts (
   parent bigint null,
   path bigint[] not null,
   thread bigint,
+  post_root bigint,
 -- --
 --   FOREIGN KEY (author) references users (nickname),
 --   FOREIGN KEY (forum) references forums (slug),

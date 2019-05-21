@@ -15,10 +15,6 @@ func main() {
 	defer config.Logger.Sync()
 
 	log.Println("Server started!")
-	err := config.DB.Ping()
-	if err != nil {
-		log.Fatalf("Can not connect to DB: %v", err.Error())
-	}
 
 	r := gin.New()
 	gin.SetMode(gin.ReleaseMode)

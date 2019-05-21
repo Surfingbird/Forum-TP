@@ -1,9 +1,6 @@
 package api
 
-import (
-	"database/sql"
-	"encoding/json"
-)
+import "time"
 
 type Forum struct {
 	Posts   uint64 `json:"posts"`
@@ -24,43 +21,6 @@ type DBInfo struct {
 	Posts   uint `json:"post"`
 	Threads uint `json:"thread"`
 	Users   uint `json:"user"`
-}
-
-type JsonNullInt64 struct {
-	sql.NullInt64
-}
-
-func (v JsonNullInt64) MarshalJSON() ([]byte, error) {
-	if v.Valid {
-		return json.Marshal(v.Int64)
-	} else {
-		return json.Marshal(nil)
-	}
-}
-
-func (v *JsonNullInt64) UnmarshalJSON(data []byte) error {
-	var x *int64
-	if err := json.Unmarshal(data, &x); err != nil {
-		return err
-	}
-	if x != nil {
-		v.Valid = true
-		v.Int64 = *x
-	} else {
-		v.Valid = false
-	}
-	return nil
-}
-
-type Post struct {
-	Author   string        `json:"author"`
-	Created  string        `json:"created"`
-	Forum    string        `json:"forum"`
-	Id       uint          `json:"id"`
-	IsEdited bool          `json:"isEdited"`
-	Message  string        `json:"message"`
-	Parent   JsonNullInt64 `json:"parent"`
-	Thread   uint          `json:"thread"`
 }
 
 type PostUpdaet struct {
@@ -97,14 +57,14 @@ type Vote struct {
 }
 
 type Thread struct {
-	Author  string `json:"author"`
-	Created string `json:"created"`
-	Forum   string `json:"forum"`
-	Id      uint64 `json:"id"`
-	Message string `json:"message"`
-	Slug    string `json:"slug"`
-	Title   string `json:"title"`
-	Votes   int64  `json:"votes"`
+	Author  string    `json:"author"`
+	Created time.Time `json:"created"`
+	Forum   string    `json:"forum"`
+	Id      uint64    `json:"id"`
+	Message string    `json:"message"`
+	Slug    string    `json:"slug"`
+	Title   string    `json:"title"`
+	Votes   int64     `json:"votes"`
 }
 
 type ThreadUpdate struct {

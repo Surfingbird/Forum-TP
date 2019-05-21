@@ -13,14 +13,15 @@ import (
 func CreatePost(posts []*api.Post, treadID int) (status int) {
 
 	tx, _ := config.DB.Begin()
-	stmnt, err := tx.Prepare(sqlInsertPost)
+	_, err := tx.Prepare("bulk_create", sqlInsertPost)
 	if err != nil {
 		tx.Rollback()
 
 		config.Logger.Fatal(err.Error())
 	}
 
-	time := time.Now().Format(time.UnixDate)
+	time := time.Now()
+
 	if len(posts) > 0 {
 		if ok := CheckParent(posts[0].Parent, treadID); !ok {
 			status = http.StatusConflict
@@ -41,9 +42,10 @@ func CreatePost(posts []*api.Post, treadID int) (status int) {
 		post.Thread = uint(treadID)
 		post.Forum, _ = GetForumByThread(post.Thread)
 
-		err := stmnt.QueryRow(
-			post.Author,
+		err := tx.QueryRow(
+			"bulk_create",
 			time,
+			post.Author,
 			post.Forum,
 			post.Message,
 			post.Parent,
@@ -51,17 +53,15 @@ func CreatePost(posts []*api.Post, treadID int) (status int) {
 		if err != nil {
 			tx.Rollback()
 
-			config.Logger.Fatal("CreatePost", err.Error())
+			config.Logger.Fatal("CreatePost ", err.Error())
 		}
-
-		// postsId = append(postsId, postId)
 	}
 
 	err = tx.Commit()
 	if err != nil {
 		tx.Rollback()
 
-		config.Logger.Fatal("CreatePost", err.Error())
+		config.Logger.Fatal("CreatePost ", err.Error())
 	}
 
 	status = http.StatusCreated
@@ -93,14 +93,15 @@ func SelectCreatedPosts(postsId []int) []api.Post {
 	return postsFull
 }
 
-func CheckParent(idParent api.JsonNullInt64, thread int) bool {
-	if !idParent.Valid {
+func CheckParent(idParent int64, thread int) bool {
+	if idParent == 0 {
 		return true
 	}
 
-	row := config.DB.QueryRow(sqlCheckParentPost, idParent, thread)
-	err := row.Scan()
-	if err == sql.ErrNoRows {
+	var id int
+	err := config.DB.QueryRow(sqlCheckParentPost, idParent, thread).Scan(&id)
+	if err != nil {
+		config.Logger.Info("CheckParent", err.Error())
 		return false
 	}
 
@@ -138,7 +139,7 @@ func UpdatePost(id int, updaet api.PostUpdaet) (status int) {
 		log.Fatalln("UpdatePost", err.Error())
 	}
 
-	rows, _ := res.RowsAffected()
+	rows := res.RowsAffected()
 	if rows != 1 {
 		log.Fatalf("UpdatePost: expected %v, have %v", 1, rows)
 	}
@@ -179,12 +180,17 @@ func SortedPosts(params *api.PostsSorted, thread int) []api.Post {
 var sqlPosts = `select author, created, forum, id, message, parent, thread, isedited
 from posts `
 
-var sqlInsertPost = `INSERT INTO posts (author, created, forum, message, parent, thread, path)
- 				VALUES ($1, $2, $3, $4, $5, $6,
-                (SELECT path FROM posts WHERE id = $5)
-                ||
-				(SELECT currval('posts_id_seq')))
-				RETURNING id, created`
+var sqlInsertPost = ` INSERT INTO posts (created, author, forum, message, parent, thread, path, post_root) VALUES ($1, $2, $3, $4, $5, $6,
+	(SELECT path FROM posts WHERE id = $5)
+			||
+			(SELECT currval('posts_id_seq')),
+			CASE WHEN $5 = 0
+				THEN currval('posts_id_seq')
+				ELSE
+					(SELECT post_root FROM posts WHERE id = $5)
+			END)
+
+			RETURNING id, created`
 
 var sqlCheckParentPost = `select id from posts where id = $1 and thread = $2`
 

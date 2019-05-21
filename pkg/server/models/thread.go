@@ -42,7 +42,7 @@ func CreateThread(t *api.Thread) (status int, lastid int64) {
 		}
 	}
 
-	if t.Created == "" {
+	if t.Created.IsZero() {
 		err := config.DB.QueryRow(sqlInsertThread,
 			t.Author,
 			t.Forum,
@@ -175,7 +175,7 @@ func CheckThreadBySlug(slug string) bool {
 		config.Logger.Fatal("CheckThreadBySlug", err.Error())
 	}
 
-	count, _ := res.RowsAffected()
+	count := res.RowsAffected()
 
 	if count > 1 {
 		log.Fatalln("Not uniq thread slug")
@@ -365,7 +365,7 @@ func UpdateThread(updateThread api.ThreadUpdate, slugOrID string) (status int) {
 		config.Logger.Fatal("UpdateThread: ", err.Error())
 	}
 
-	rows, _ := res.RowsAffected()
+	rows := res.RowsAffected()
 	if rows != 1 {
 		config.Logger.Fatalf("UpdateThread, Invalid update: expected %v, have %v\n", 1, rows)
 	}

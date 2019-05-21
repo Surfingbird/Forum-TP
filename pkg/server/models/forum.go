@@ -3,7 +3,6 @@ package models
 import (
 	"DB_Project_TP/api"
 	"DB_Project_TP/config"
-	"database/sql"
 	"log"
 	"net/http"
 )
@@ -54,7 +53,7 @@ func SelectForum(slug string) (forum api.Forum, status int) {
 func CheckForum(slug string) (ok bool, forumSlug string) {
 	row := config.DB.QueryRow(sqlCheckForum, slug)
 	err := row.Scan(&forumSlug)
-	if err == sql.ErrNoRows {
+	if err != nil {
 		return false, forumSlug
 	}
 
