@@ -1,7 +1,6 @@
 package models
 
 import (
-	"database/sql"
 	"log"
 	"net/http"
 	"time"
@@ -110,9 +109,8 @@ func CheckParent(idParent int64, thread int) bool {
 
 func CheckPost(id int) bool {
 	per := 0
-	row := config.DB.QueryRow(sqlCheckPost, id)
-	err := row.Scan(&per)
-	if err == sql.ErrNoRows {
+	err := config.DB.QueryRow(sqlCheckPost, id).Scan(&per)
+	if err != nil {
 		return false
 	}
 
@@ -148,8 +146,7 @@ func UpdatePost(id int, updaet api.PostUpdaet) (status int) {
 }
 
 func SelectPost(id int) (post api.Post, status int) {
-	row := config.DB.QueryRow(sqlSelectPost, id)
-	err := row.Scan(&post.Author,
+	err := config.DB.QueryRow(sqlSelectPost, id).Scan(&post.Author,
 		&post.Created,
 		&post.Forum,
 		&post.Id,
@@ -157,7 +154,7 @@ func SelectPost(id int) (post api.Post, status int) {
 		&post.Parent,
 		&post.Thread,
 		&post.IsEdited)
-	if err == sql.ErrNoRows {
+	if err != nil {
 		return post, http.StatusNotFound
 	}
 

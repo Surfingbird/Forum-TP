@@ -3,7 +3,6 @@ package models
 import (
 	"DB_Project_TP/api"
 	"DB_Project_TP/config"
-	"log"
 	"net/http"
 )
 
@@ -28,26 +27,22 @@ func CreateForum(f *api.Forum) (status int) {
 }
 
 func SelectForum(slug string) (forum api.Forum, status int) {
-	row, err := config.DB.Query(sqlSelectForum, slug)
-	if err != nil {
-		log.Fatalln("SelectForum", err.Error())
-	}
-	defer row.Close()
-
-	if !row.Next() {
-		return forum, http.StatusNotFound
-	}
-
-	if err := row.Scan(
+	err := config.DB.QueryRow(sqlSelectForum, slug).Scan(
 		&forum.Slug,
 		&forum.Threads,
 		&forum.Title,
 		&forum.Posts,
-		&forum.User); err != nil {
-		log.Fatalf("SelectUser: %v\n", err.Error())
+		&forum.User)
+
+	if err != nil {
+		status = http.StatusNotFound
+
+		return
 	}
 
-	return forum, http.StatusOK
+	status = http.StatusOK
+
+	return
 }
 
 func CheckForum(slug string) (ok bool, forumSlug string) {

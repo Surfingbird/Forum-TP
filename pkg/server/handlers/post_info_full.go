@@ -41,7 +41,12 @@ func PostFullHandler(c *gin.Context) {
 	if ok, _ := regexp.Match("user", []byte(str)); ok {
 		author, err := models.SelectUser(post.Author)
 		if err != nil {
-			c.AbortWithStatus(http.StatusNotFound)
+			message := "there is no post with this id"
+			error := api.Error{
+				Message: message,
+			}
+
+			c.JSON(http.StatusNotFound, error)
 
 			return
 		}
@@ -51,7 +56,12 @@ func PostFullHandler(c *gin.Context) {
 	if ok, _ := regexp.Match("forum", []byte(str)); ok {
 		forum, status := models.SelectForum(post.Forum)
 		if status == http.StatusNotFound {
-			c.AbortWithStatus(http.StatusNotFound)
+			message := "there is no post with this id"
+			error := api.Error{
+				Message: message,
+			}
+
+			c.JSON(http.StatusNotFound, error)
 
 			return
 		}
@@ -61,7 +71,12 @@ func PostFullHandler(c *gin.Context) {
 	if ok, _ := regexp.Match("thread", []byte(str)); ok {
 		thread, status := models.SelectThreadBySlugOrID(strconv.Itoa(int(post.Thread)))
 		if status == http.StatusNotFound {
-			c.AbortWithStatus(http.StatusNotFound)
+			message := "there is no post with this id"
+			error := api.Error{
+				Message: message,
+			}
+
+			c.JSON(http.StatusNotFound, error)
 
 			return
 		}

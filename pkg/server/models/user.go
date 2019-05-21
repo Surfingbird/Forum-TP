@@ -51,23 +51,14 @@ func SelectConflictUsers(nickname, email string) []api.User {
 }
 
 func SelectUser(nickname string) (u api.User, err error) {
-	rows, err := config.DB.Query(sqlSelectUser, nickname)
+	err = config.DB.QueryRow(sqlSelectUser, nickname).Scan(&u.About,
+		&u.Email,
+		&u.Fullname,
+		&u.Nickname)
 	if err != nil {
-		log.Fatalln("SelectUser", err.Error())
-	}
-	defer rows.Close()
-
-	if !rows.Next() {
 		err = errors.New("There is no this user!")
 
 		return u, err
-	}
-
-	if err := rows.Scan(&u.About,
-		&u.Email,
-		&u.Fullname,
-		&u.Nickname); err != nil {
-		log.Fatalf("SelectUser: %v\n", err.Error())
 	}
 
 	return u, nil

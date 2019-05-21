@@ -265,9 +265,8 @@ func SelectThreadByTitleAndForum(title string, forum string) (thread api.Thread,
 }
 
 func ThreadIdbySlug(slug string) (id, status int) {
-	row := config.DB.QueryRow(sqlSelectThreadIdbySlug, slug)
-	err := row.Scan(&id)
-	if err == sql.ErrNoRows {
+	err := config.DB.QueryRow(sqlSelectThreadIdbySlug, slug).Scan(&id)
+	if err != nil {
 		return id, http.StatusNotFound
 	}
 
@@ -276,9 +275,8 @@ func ThreadIdbySlug(slug string) (id, status int) {
 
 func CheckThreadById(id int) bool {
 	per := 0
-	row := config.DB.QueryRow(sqlCheckThreadIdbyId, id)
-	err := row.Scan(&per)
-	if err == sql.ErrNoRows {
+	err := config.DB.QueryRow(sqlCheckThreadIdbyId, id).Scan(&per)
+	if err != nil {
 		return false
 	}
 
@@ -313,8 +311,7 @@ func getThreadID(slugOrID string) (id, status int) {
 func SelectThreadBySlugOrID(slugOrID string) (thread api.Thread, status int) {
 	id, err := strconv.Atoi(slugOrID)
 	if err != nil {
-		row := config.DB.QueryRow(sqlSelectThreadBySlug, slugOrID)
-		err := row.Scan(&thread.Author,
+		err := config.DB.QueryRow(sqlSelectThreadBySlug, slugOrID).Scan(&thread.Author,
 			&thread.Created,
 			&thread.Forum,
 			&thread.Id,
@@ -332,8 +329,7 @@ func SelectThreadBySlugOrID(slugOrID string) (thread api.Thread, status int) {
 
 		return
 	} else {
-		row := config.DB.QueryRow(sqlSelectThreadById, id)
-		err = row.Scan(&thread.Author,
+		err := config.DB.QueryRow(sqlSelectThreadById, id).Scan(&thread.Author,
 			&thread.Created,
 			&thread.Forum,
 			&thread.Id,
