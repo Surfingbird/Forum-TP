@@ -5,8 +5,6 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/jackc/pgx"
-
 	"DB_Project_TP/config"
 )
 
@@ -14,16 +12,19 @@ func VoteBranch(vote api.Vote, id uint64) (status int, diff int) {
 	newv := vote.Voice
 	diff = newv
 
-	tx, err := config.DB.Begin()
-	if err != nil {
-		config.Logger.Fatal("VoteBranch", err.Error())
-	}
+	// tx, err := config.DB.Begin()
+	// if err != nil {
+	// 	config.Logger.Fatal("VoteBranch", err.Error())
+	// }
 
-	ok, old := CheckUserVoteInThread(vote.Nickname, id, tx)
+	// ok, old := CheckUserVoteInThread(vote.Nickname, id, tx)
+	ok, old := CheckUserVoteInThread(vote.Nickname, id)
 	if !ok {
-		SaveUserVote(vote, id, tx)
+		// SaveUserVote(vote, id, tx)
+		SaveUserVote(vote, id)
 	} else {
-		UpdateUserVote(vote, id, tx)
+		// UpdateUserVote(vote, id, tx)
+		UpdateUserVote(vote, id)
 		diff = newv - old
 		if diff == 0 {
 			status = http.StatusOK
@@ -32,27 +33,29 @@ func VoteBranch(vote api.Vote, id uint64) (status int, diff int) {
 		}
 	}
 
-	res, err := tx.Exec(sqlVoteForThread, diff, id)
+	// res, err := tx.Exec(sqlVoteForThread, diff, id)
+	res, err := config.DB.Exec(sqlVoteForThread, diff, id)
 	if err != nil {
-		tx.Rollback()
+		// tx.Rollback()
 		config.Logger.Fatal("VoteBranch", err.Error())
 	}
 
 	rows := res.RowsAffected()
 	if rows != 1 {
-		tx.Rollback()
+		// tx.Rollback()
 		config.Logger.Fatalf("VoteBranch update: expected: %v have %v", 1, rows)
 	}
 
 	status = http.StatusOK
 
-	err = tx.Commit()
+	// err = tx.Commit()
 
 	return
 }
 
-func SaveUserVote(vote api.Vote, id uint64, tx *pgx.Tx) {
-	res, err := tx.Exec(sqlSaveUserVote, vote.Nickname, id, vote.Voice)
+// func SaveUserVote(vote api.Vote, id uint64, tx *pgx.Tx) {
+func SaveUserVote(vote api.Vote, id uint64) {
+	res, err := config.DB.Exec(sqlSaveUserVote, vote.Nickname, id, vote.Voice)
 	if err != nil {
 		log.Fatalln("SaveUserVote:", err.Error())
 	}
@@ -64,8 +67,9 @@ func SaveUserVote(vote api.Vote, id uint64, tx *pgx.Tx) {
 	}
 }
 
-func CheckUserVoteInThread(nickname string, threadID uint64, tx *pgx.Tx) (ok bool, old int) {
-	err := tx.QueryRow(sqlCheckUserVote,
+// func CheckUserVoteInThread(nickname string, threadID uint64, tx *pgx.Tx) (ok bool, old int) {
+func CheckUserVoteInThread(nickname string, threadID uint64) (ok bool, old int) {
+	err := config.DB.QueryRow(sqlCheckUserVote,
 		nickname,
 		threadID).Scan(&old)
 
@@ -78,8 +82,9 @@ func CheckUserVoteInThread(nickname string, threadID uint64, tx *pgx.Tx) (ok boo
 	return
 }
 
-func UpdateUserVote(vote api.Vote, id uint64, tx *pgx.Tx) {
-	commandTag, err := tx.Exec(SqlUpdateUserVote, vote.Voice, vote.Nickname, id)
+// func UpdateUserVote(vote api.Vote, id uint64, tx *pgx.Tx) {
+func UpdateUserVote(vote api.Vote, id uint64) {
+	commandTag, err := config.DB.Exec(SqlUpdateUserVote, vote.Voice, vote.Nickname, id)
 	if err != nil {
 		config.Logger.Fatal("UpdateUserVote: ", err.Error())
 	}
