@@ -10,7 +10,6 @@ import (
 	"DB_Project_TP/config"
 )
 
-//toDo доделать логику обновления голосований
 func VoteBranch(vote api.Vote, id uint64) (status int, diff int) {
 	newv := vote.Voice
 	diff = newv
@@ -71,7 +70,6 @@ func CheckUserVoteInThread(nickname string, threadID uint64, tx *pgx.Tx) (ok boo
 		threadID).Scan(&old)
 
 	if err != nil {
-
 		return
 	}
 
@@ -81,10 +79,13 @@ func CheckUserVoteInThread(nickname string, threadID uint64, tx *pgx.Tx) (ok boo
 }
 
 func UpdateUserVote(vote api.Vote, id uint64, tx *pgx.Tx) {
-	_, err := tx.Exec(sqlUpdateUserVote, vote.Voice, id, vote.Nickname)
+	commandTag, err := tx.Exec(SqlUpdateUserVote, vote.Voice, vote.Nickname, id)
 	if err != nil {
+		config.Logger.Fatal("UpdateUserVote: ", err.Error())
+	}
 
-		log.Fatalln("UpdateUserVote: ", err.Error())
+	if commandTag.RowsAffected() != 1 {
+		config.Logger.Fatal("UpdateUserVote: ", err.Error())
 	}
 }
 
@@ -94,4 +95,4 @@ var sqlSaveUserVote = `insert into votes (v_user, thread, u_vote) values ($1, $2
 
 var sqlCheckUserVote = `select u_vote from votes  where v_user = $1 and thread = $2`
 
-var sqlUpdateUserVote = `update votes set u_vote = $1 where v_user = $3 and thread = $2`
+var SqlUpdateUserVote = `update votes set u_vote = $1 where v_user = $2 and thread = $3`

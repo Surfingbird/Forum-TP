@@ -16,7 +16,7 @@ func main() {
 
 	log.Println("Server started!")
 
-	r := gin.New()
+	r := gin.Default()
 	gin.SetMode(gin.ReleaseMode)
 
 	r.Use(ContentTypeMiddleware)
