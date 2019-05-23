@@ -69,3 +69,36 @@ create unlogged table votes (
 );
 create index idx_vote_user on votes using btree (v_user, thread);
 --
+
+
+CREATE TRIGGER thread_votes_incr
+		AFTER INSERT ON votes
+		FOR EACH ROW
+		EXECUTE PROCEDURE incr_votes_count();
+
+	CREATE TRIGGER thread_votes_decr
+		AFTER DELETE ON votes
+		FOR EACH ROW
+		EXECUTE PROCEDURE decr_votes_count();
+
+
+
+	CREATE OR REPLACE FUNCTION incr_votes_count() RETURNS TRIGGER AS $example_table$
+	BEGIN
+		UPDATE threads
+		SET votes = votes + NEW.voice
+		WHERE id = NEW.thread;
+		RETURN NEW;
+	END;
+	$example_table$ LANGUAGE plpgsql;
+
+
+
+	CREATE OR REPLACE FUNCTION decr_votes_count() RETURNS TRIGGER AS $example_table$
+	BEGIN
+		UPDATE threads
+		SET votes = votes - OLD.voice
+		WHERE id = OLD.thread;
+		RETURN OLD;
+	END;
+	$example_table$ LANGUAGE plpgsql;
