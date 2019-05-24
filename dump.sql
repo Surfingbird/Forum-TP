@@ -70,6 +70,26 @@ create unlogged table votes (
 create index idx_vote_user on votes using btree (v_user, thread);
 --
 
+	CREATE OR REPLACE FUNCTION incr_votes_count() RETURNS TRIGGER AS $example_table$
+	BEGIN
+		UPDATE threads
+		SET votes = votes + NEW.u_vote
+		WHERE id = NEW.thread;
+		RETURN NEW;
+	END;
+	$example_table$ LANGUAGE plpgsql;
+
+
+
+	CREATE OR REPLACE FUNCTION decr_votes_count() RETURNS TRIGGER AS $example_table$
+	BEGIN
+		UPDATE threads
+		SET votes = votes - OLD.u_vote
+		WHERE id = OLD.thread;
+		RETURN OLD;
+	END;
+	$example_table$ LANGUAGE plpgsql;
+
 
 CREATE TRIGGER thread_votes_incr
 		AFTER INSERT ON votes
@@ -81,24 +101,3 @@ CREATE TRIGGER thread_votes_incr
 		FOR EACH ROW
 		EXECUTE PROCEDURE decr_votes_count();
 
-
-
-	CREATE OR REPLACE FUNCTION incr_votes_count() RETURNS TRIGGER AS $example_table$
-	BEGIN
-		UPDATE threads
-		SET votes = votes + NEW.voice
-		WHERE id = NEW.thread;
-		RETURN NEW;
-	END;
-	$example_table$ LANGUAGE plpgsql;
-
-
-
-	CREATE OR REPLACE FUNCTION decr_votes_count() RETURNS TRIGGER AS $example_table$
-	BEGIN
-		UPDATE threads
-		SET votes = votes - OLD.voice
-		WHERE id = OLD.thread;
-		RETURN OLD;
-	END;
-	$example_table$ LANGUAGE plpgsql;
